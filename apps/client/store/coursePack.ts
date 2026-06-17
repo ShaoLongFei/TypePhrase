@@ -2,7 +2,6 @@ import { defineStore } from "pinia";
 import { ref } from "vue";
 
 import type { CoursePack, CoursePacksItem } from "~/types";
-import { fetchCourseHistory } from "~/api/course-history";
 import { fetchCoursePack, fetchCoursePacks } from "~/api/course-pack";
 
 export const useCoursePackStore = defineStore("course-pack", () => {
@@ -21,25 +20,9 @@ export const useCoursePackStore = defineStore("course-pack", () => {
     currentCoursePack.value = res;
   }
 
-  async function updateCoursesCompleteCount(coursePackId: string) {
-    const courseHistory = await fetchCourseHistory(coursePackId);
-
-    const find = (courseId: string) =>
-      courseHistory.find((history) => history.courseId === courseId);
-
-    currentCoursePack.value?.courses.forEach((course) => {
-      const matchCourseHistory = find(course.id);
-
-      if (matchCourseHistory) {
-        course.completionCount = matchCourseHistory.completionCount;
-      }
-    });
-  }
-
   return {
     setupCoursePack,
     setupCoursePacks,
-    updateCoursesCompleteCount,
     currentCoursePack,
     coursePacks,
   };

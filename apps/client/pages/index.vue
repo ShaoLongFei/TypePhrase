@@ -1,8 +1,5 @@
-<template>
-  <Home v-if="isAuthenticated()"></Home>
-  <Landing v-else></Landing>
-</template>
-
 <script setup lang="ts">
-import { isAuthenticated } from "~/services/auth";
+import { navigateTo } from "#app";
+
+await navigateTo("/course-pack", { replace: true });
 </script>

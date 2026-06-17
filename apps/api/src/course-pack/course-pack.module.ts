@@ -1,14 +1,13 @@
 import { Module } from "@nestjs/common";
 
-import { CourseHistoryModule } from "../course-history/course-history.module";
+import { CourseHistoryService } from "../course-history/course-history.service";
 import { CourseModule } from "../course/course.module";
-import { MembershipModule } from "../membership/membership.module";
 import { CoursePackController } from "./course-pack.controller";
 import { CoursePackService } from "./course-pack.service";
 
 @Module({
-  imports: [CourseModule, MembershipModule, CourseHistoryModule],
-  providers: [CoursePackService],
+  imports: [CourseModule],
+  providers: [CoursePackService, CourseHistoryService],
   controllers: [CoursePackController],
 })
 export class CoursePackModule {}

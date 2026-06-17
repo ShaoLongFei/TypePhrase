@@ -27,7 +27,7 @@ describe("course-pack e2e", () => {
 
     await cleanDB(db);
 
-    token = await signin(moduleFixture);
+    token = await signin();
   });
 
   afterEach(async () => {
@@ -116,6 +116,26 @@ describe("course-pack e2e", () => {
     return request(app.getHttpServer())
       .post(`/course-pack/${coursePackId}/courses/${courseId}/complete`)
       .set("Authorization", `Bearer ${token}`)
+      .expect(201)
+      .expect(({ body }) => {
+        expect(body.nextCourse.id).toBe(courseIdNext);
+      });
+  });
+
+  it("post: /course-pack/:coursePackId/courses/:courseId/complete anonymously", async () => {
+    const { id: coursePackId } = await insertCoursePack(db);
+
+    const { id: courseId } = await insertCourse(db, coursePackId, {
+      order: 1,
+      title: "第一课",
+    });
+    const { id: courseIdNext } = await insertCourse(db, coursePackId, {
+      order: 2,
+      title: "第二课",
+    });
+
+    return request(app.getHttpServer())
+      .post(`/course-pack/${coursePackId}/courses/${courseId}/complete`)
       .expect(201)
       .expect(({ body }) => {
         expect(body.nextCourse.id).toBe(courseIdNext);

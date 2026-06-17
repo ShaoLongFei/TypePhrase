@@ -4,15 +4,12 @@ import { computed, ref, watchEffect } from "vue";
 import type { Course, Statement } from "~/types";
 import { fetchCompleteCourse, fetchCourse } from "~/api/course";
 import { useActiveCourseMap } from "~/composables/courses/activeCourse";
-import { isAuthenticated } from "~/services/auth";
-import { useMasteredElementsStore } from "~/store/masteredElements";
 import { useStatement } from "./statement";
 
 export const useCourseStore = defineStore("course", () => {
   const currentCourse = ref<Course>();
   const currentStatement = ref<Statement>();
-  const { statementIndex, setupAutoSaveProgress } = useStatement();
-  const masteredElementsStore = useMasteredElementsStore();
+  const { statementIndex } = useStatement();
 
   const { updateActiveCourseMap } = useActiveCourseMap();
 
@@ -101,12 +98,6 @@ export const useCourseStore = defineStore("course", () => {
     return visibleStatementsCount.value === 0;
   }
 
-  function updateMarketedStatements() {
-    if (currentCourse.value) {
-      currentCourse.value.statements = markMasteredElements(currentCourse.value.statements);
-    }
-  }
-
   function findFirstUnmasteredIndex() {
     if (!currentCourse.value) return 0;
     return currentCourse.value.statements.findIndex((statement) => !statement.isMastered);
@@ -126,26 +117,10 @@ export const useCourseStore = defineStore("course", () => {
   async function setup(coursePackId: string, courseId: string) {
     let course = await fetchCourse(coursePackId, courseId);
 
-    course.statements = markMasteredElements(course.statements);
-
     currentCourse.value = course;
-    if (isAuthenticated()) {
-      setupAutoSaveProgress(currentCourse);
-      if (statementIndex.value === 0) {
-        resetStatementIndex();
-      }
+    if (statementIndex.value === 0) {
+      resetStatementIndex();
     }
-  }
-
-  function markMasteredElements(statements: Statement[]) {
-    return statements.map((statement) => {
-      const isMastered = masteredElementsStore.checkMastered(statement.english);
-
-      return {
-        ...statement,
-        isMastered,
-      };
-    });
   }
 
   return {
@@ -164,7 +139,6 @@ export const useCourseStore = defineStore("course", () => {
     toPreviousStatement,
     toNextStatement,
     resetStatementIndex,
-    updateMarketedStatements,
     isLastStatement,
     isAllMastered,
   };

@@ -57,7 +57,6 @@
           播放声音
         </button>
       </div>
-      <MainMasteredBtn></MainMasteredBtn>
     </div>
   </div>
 </template>

@@ -11,8 +11,8 @@ export class CoursePackController {
   @UncheckAuth()
   @UseGuards(AuthGuard)
   @Get()
-  async findAll(@User() user: UserEntity) {
-    return await this.coursePackService.findAll(user.userId);
+  async findAll() {
+    return await this.coursePackService.findAll();
   }
 
   @UncheckAuth()
@@ -40,6 +40,7 @@ export class CoursePackController {
     return this.coursePackService.findNextCourse(coursePackId, courseId);
   }
 
+  @UncheckAuth()
   @UseGuards(AuthGuard)
   @Post(":coursePackId/courses/:courseId/complete")
   CompleteCourse(

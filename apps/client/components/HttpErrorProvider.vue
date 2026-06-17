@@ -6,7 +6,6 @@
 import { toast } from "vue-sonner";
 
 import { injectHttpStatusErrorHandler } from "~/api/http.js";
-import { signIn } from "~/services/auth";
 
 useHttpStatusError();
 
@@ -14,12 +13,7 @@ function useHttpStatusError() {
   injectHttpStatusErrorHandler(async (errMessage, statusCode) => {
     switch (statusCode) {
       case 401:
-        toast.error(errMessage, {
-          duration: 2000,
-          onAutoClose() {
-            signIn(window.location.pathname);
-          },
-        });
+        toast.error(errMessage || "当前内容暂不可访问");
         break;
       default:
         toast.error(errMessage);

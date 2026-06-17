@@ -9,7 +9,6 @@ import { endDB } from "../../common/db";
 import { CourseHistoryService } from "../../course-history/course-history.service";
 import { CourseService } from "../../course/course.service";
 import { DB } from "../../global/providers/db.provider";
-import { MembershipService } from "../../membership/membership.service";
 import { CoursePackService } from "../course-pack.service";
 
 describe("CoursePackService", () => {
@@ -37,51 +36,33 @@ describe("CoursePackService", () => {
   });
 
   describe("findAll", () => {
-    it("should return all course packs including private and public", async () => {
+    it("should return public course packs", async () => {
       await insertCoursePack(db, { creatorId: "admin", shareLevel: "public" });
       await insertCoursePack(db, { creatorId: "user1", shareLevel: "public" });
 
-      const result = await coursePackService.findAll("user1");
+      const result = await coursePackService.findAll();
 
-      expect(result.length).toBe(2); // user1's private and public packs
+      expect(result.length).toBe(2);
     });
 
-    it("should return only public course packs", async () => {
+    it("should not return private course packs", async () => {
       await insertCoursePack(db, { creatorId: "admin", shareLevel: "public" });
       await insertCoursePack(db, { creatorId: "admin", shareLevel: "public" });
       await insertCoursePack(db, { creatorId: "user2", shareLevel: "private" });
 
-      const result = await coursePackService.findAllPublicCoursePacks();
+      const result = await coursePackService.findAll();
 
-      expect(result.length).toBe(2); // all public packs
+      expect(result.length).toBe(2);
     });
 
-    it("should return only private course packs and public course packs for a specific user", async () => {
+    it("should not return founder-only course packs", async () => {
       await insertCoursePack(db, { creatorId: "user1", shareLevel: "private" });
       await insertCoursePack(db, { creatorId: "admin", shareLevel: "public" });
-      await insertCoursePack(db, { creatorId: "user2", shareLevel: "private" });
-
-      const result = await coursePackService.findAll("user1");
-
-      expect(result.length).toBe(2); // user1's private pack
-    });
-
-    it("should return all course packs including founder_only for a founder member", async () => {
-      await insertCoursePack(db, { creatorId: "founderUser", shareLevel: "private" });
       await insertCoursePack(db, { creatorId: "admin", shareLevel: "founder_only" });
 
-      const result = await coursePackService.findAll("founderUser");
+      const result = await coursePackService.findAll();
 
-      expect(result.length).toBe(2); // founderUser's private pack and founder_only pack
-    });
-
-    it("should return only private course packs for a non-founder member", async () => {
-      await insertCoursePack(db, { creatorId: "nonFounderUser", shareLevel: "private" });
-      await insertCoursePack(db, { creatorId: "admin", shareLevel: "founder_only" });
-
-      const result = await coursePackService.findAll("nonFounderUser");
-
-      expect(result.length).toBe(1); // nonFounderUser's private pack
+      expect(result.length).toBe(1);
     });
   });
 
@@ -111,7 +92,7 @@ describe("CoursePackService", () => {
       expect(result.courses[0]).toHaveProperty("completionCount");
     });
 
-    it("should return a course pack with courses and completion counts when userId is provided and course pack is private but user is the creator", async () => {
+    it("should throw NotFoundException when course pack is private", async () => {
       const userId = "cxr";
       const coursePackEntity = await insertCoursePack(db, {
         shareLevel: "private",
@@ -119,10 +100,9 @@ describe("CoursePackService", () => {
       });
       await insertCourse(db, coursePackEntity.id);
 
-      const result = await coursePackService.findOneWithCourses(userId, coursePackEntity.id);
-
-      expect(result.courses.length).toBe(1);
-      expect(result.courses[0]).toHaveProperty("completionCount");
+      await expect(
+        coursePackService.findOneWithCourses(userId, coursePackEntity.id),
+      ).rejects.toThrow(NotFoundException);
     });
 
     it("should throw NotFoundException when course pack ID does not exist", async () => {
@@ -158,25 +138,11 @@ describe("CoursePackService", () => {
       expect(result.courses[0]).not.toHaveProperty("completionCount");
     });
 
-    it("should return a course pack with courses and completion counts when userId is provided and user is a founder member", async () => {
+    it("should throw NotFoundException when course pack is founder_only", async () => {
       const userId = "founderUser";
       const coursePackEntity = await insertCoursePack(db, {
         shareLevel: "founder_only",
-        creatorId: "another-user-id", // The creator can be different from the founder member
-      });
-      await insertCourse(db, coursePackEntity.id);
-
-      const result = await coursePackService.findOneWithCourses(userId, coursePackEntity.id);
-
-      expect(result.courses.length).toBe(1);
-      expect(result.courses[0]).toHaveProperty("completionCount");
-    });
-
-    it("should throw NotFoundException when course pack is founder_only and user is not a founder member", async () => {
-      const userId = "nonFounderUser";
-      const coursePackEntity = await insertCoursePack(db, {
-        shareLevel: "founder_only",
-        creatorId: "another-user-id", // The creator can be different from the non-founder member
+        creatorId: "another-user-id",
       });
       await insertCourse(db, coursePackEntity.id);
 
@@ -234,10 +200,6 @@ async function setupTesting() {
     findCompletionCount: jest.fn(() => 1),
   };
 
-  const MockMembershipService = {
-    isFounderMembership: jest.fn((userId) => userId === "founderUser"),
-  };
-
   const moduleRef = await Test.createTestingModule({
     imports: testImportModules,
     providers: [
@@ -246,10 +208,6 @@ async function setupTesting() {
       {
         provide: CourseHistoryService,
         useValue: MockCourseHistoryService,
-      },
-      {
-        provide: MembershipService,
-        useValue: MockMembershipService,
       },
     ],
   }).compile();

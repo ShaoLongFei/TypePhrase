@@ -37,10 +37,7 @@
         </UTooltip>
       </div>
 
-      <div
-        v-if="isAuthenticated()"
-        @click="pauseGame"
-      >
+      <div @click="pauseGame">
         <UTooltip
           text="暂停游戏"
           :shortcuts="parseShortcut(shortcutKeys.pause)"
@@ -85,7 +82,6 @@ import { useGamePause } from "~/composables/main/useGamePause";
 import { useGameSetting } from "~/composables/main/useGameSetting";
 import { useGamePlayMode } from "~/composables/user/gamePlayMode";
 import { parseShortcut, useShortcutKeyMode } from "~/composables/user/shortcutKey";
-import { isAuthenticated } from "~/services/auth";
 import { useCourseStore } from "~/store/course";
 
 const { shortcutKeys } = useShortcutKeyMode();

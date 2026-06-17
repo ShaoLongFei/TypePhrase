@@ -3,24 +3,16 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ref } from "vue";
 
 import { fetchCompleteCourse, fetchCourse } from "~/api/course";
-import { fetchAddMasteredElement, fetchGetMasteredElements } from "~/api/mastered-elements";
 import { useActiveCourseMap } from "~/composables/courses/activeCourse";
-import { isAuthenticated } from "~/services/auth";
-import { useMasteredElementsStore } from "~/store/masteredElements";
 import { useCourseStore } from "../course";
-import { useStatement } from "../statement";
 
 vi.mock("~/api/course");
-vi.mock("~/api/mastered-elements");
-vi.mock("~/services/auth");
 vi.mock("~/composables/courses/activeCourse");
 
-let mockSetupAutoSaveProgress = vi.fn();
 vi.mock("../statement.ts", () => {
   return {
     useStatement: () => {
       const returnObj = {
-        setupAutoSaveProgress: mockSetupAutoSaveProgress,
         statementIndex: ref(0),
       };
 
@@ -70,30 +62,13 @@ const mockCourse = {
 
 describe("CourseStore", () => {
   let courseStore: ReturnType<typeof useCourseStore>;
-  let masteredElementsStore: ReturnType<typeof useMasteredElementsStore>;
 
   beforeEach(async () => {
     setActivePinia(createPinia());
     vi.mocked(fetchCourse).mockResolvedValue(mockCourse);
-    vi.mocked(isAuthenticated).mockReturnValue(true);
     vi.mocked(useActiveCourseMap).mockReturnValue({
       updateActiveCourseMap: vi.fn(),
     } as any);
-
-    vi.mocked(fetchGetMasteredElements).mockResolvedValue([
-      { content: { english: "World" }, masteredAt: new Date().toISOString(), id: "1" },
-    ]);
-
-    vi.mocked(fetchAddMasteredElement).mockImplementation((content) =>
-      Promise.resolve({
-        content,
-        masteredAt: new Date().toISOString(),
-        id: String(Math.random()),
-      }),
-    );
-
-    masteredElementsStore = useMasteredElementsStore();
-    await masteredElementsStore.setup();
 
     courseStore = useCourseStore();
     await courseStore.setup("pack1", "1");
@@ -102,34 +77,28 @@ describe("CourseStore", () => {
   });
 
   describe("Course initialization", () => {
-    it("should correctly load the course and mark mastered elements", () => {
+    it("should correctly load the course", () => {
       expect(courseStore.currentCourse).toEqual(mockCourse);
-      expect(courseStore.currentCourse?.statements[1].isMastered).toBe(true); // World
+      expect(courseStore.currentCourse?.statements[1].isMastered).toBe(false); // World
       expect(courseStore.currentCourse?.statements[0].isMastered).toBe(false); // Hello
     });
 
-    it("should set up auto-save progress when user is authenticated", async () => {
+    it("should initialize at the first unmastered statement", async () => {
       await courseStore.setup("pack1", "1");
-      expect(mockSetupAutoSaveProgress).toHaveBeenCalled();
-    });
-
-    it("should not set up auto-save progress when user is not authenticated", async () => {
-      vi.mocked(isAuthenticated).mockReturnValue(false);
-      await courseStore.setup("pack1", "1");
-      expect(mockSetupAutoSaveProgress).not.toHaveBeenCalled();
+      expect(courseStore.statementIndex).toBe(0);
     });
   });
 
   describe("Statement navigation", () => {
     it("should navigate to the next unmastered statement", () => {
       courseStore.toNextStatement();
-      expect(courseStore.statementIndex).toBe(2); // Skips "World" as it's mastered
+      expect(courseStore.statementIndex).toBe(1);
     });
 
     it("should navigate to the previous unmastered statement", () => {
       courseStore.toSpecificStatement(2);
       courseStore.toPreviousStatement();
-      expect(courseStore.statementIndex).toBe(0); // Skips "World" as it's mastered
+      expect(courseStore.statementIndex).toBe(1);
     });
 
     it("should handle navigation boundaries", () => {
@@ -155,22 +124,18 @@ describe("CourseStore", () => {
 
     it("should correctly identify when all statements are mastered", async () => {
       expect(courseStore.isAllMastered()).toBe(false);
-      vi.mocked(fetchGetMasteredElements).mockResolvedValue(
-        mockCourse.statements.map((s, index) => ({
-          content: { english: s.english },
-          masteredAt: new Date().toISOString(),
-          id: String(index),
-        })),
-      );
-      await masteredElementsStore.setup();
-      courseStore.updateMarketedStatements();
+      vi.mocked(fetchCourse).mockResolvedValue({
+        ...mockCourse,
+        statements: mockCourse.statements.map((statement) => ({ ...statement, isMastered: true })),
+      });
+      await courseStore.setup("pack1", "2");
       expect(courseStore.isAllMastered()).toBe(true);
     });
   });
 
   describe("Visible statements and index relationship", () => {
     it("should correctly calculate the number of visible statements", () => {
-      expect(courseStore.visibleStatementsCount).toBe(4); // All except "World"
+      expect(courseStore.visibleStatementsCount).toBe(5);
     });
 
     it("should have correct initial visibleStatementIndex", () => {
@@ -185,12 +150,12 @@ describe("CourseStore", () => {
     it("should update visibleStatementIndex when navigating to previous statement", () => {
       courseStore.toSpecificStatement(3);
       courseStore.toPreviousStatement();
-      expect(courseStore.visibleStatementIndex).toBe(1);
+      expect(courseStore.visibleStatementIndex).toBe(2);
     });
 
     it("should update visibleStatementIndex when jumping to a specific index", () => {
       courseStore.toSpecificStatement(3);
-      expect(courseStore.visibleStatementIndex).toBe(2);
+      expect(courseStore.visibleStatementIndex).toBe(3);
     });
 
     it("should reset visibleStatementIndex on doAgain", () => {
@@ -199,24 +164,12 @@ describe("CourseStore", () => {
       expect(courseStore.visibleStatementIndex).toBe(0);
     });
 
-    it("should update visibleStatementIndex when adding a new mastered element", async () => {
-      await masteredElementsStore.addElement({ english: "Hello" });
-      courseStore.updateMarketedStatements();
-      courseStore.toNextStatement();
-      expect(courseStore.visibleStatementIndex).toBe(0);
-      expect(courseStore.statementIndex).toBe(2); // Now points to "Test"
-    });
-
     it("should handle visibleStatementIndex when all statements are mastered", async () => {
-      vi.mocked(fetchGetMasteredElements).mockResolvedValue(
-        mockCourse.statements.map((s, index) => ({
-          content: { english: s.english },
-          masteredAt: new Date().toISOString(),
-          id: String(index),
-        })),
-      );
-      await masteredElementsStore.setup();
-      courseStore.updateMarketedStatements();
+      vi.mocked(fetchCourse).mockResolvedValue({
+        ...mockCourse,
+        statements: mockCourse.statements.map((statement) => ({ ...statement, isMastered: true })),
+      });
+      await courseStore.setup("pack1", "2");
       expect(courseStore.visibleStatementIndex).toBe(-1);
       expect(courseStore.visibleStatementsCount).toBe(0);
     });

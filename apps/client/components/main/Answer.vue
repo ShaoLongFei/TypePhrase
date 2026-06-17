@@ -35,9 +35,6 @@
           下一题
         </button>
       </div>
-      <div class="md:hidden">
-        <MainMasteredBtn></MainMasteredBtn>
-      </div>
     </div>
   </div>
 </template>

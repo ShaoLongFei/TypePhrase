@@ -1,46 +1,28 @@
 import { navigateTo } from "nuxt/app";
 
-const TOKEN_KEY = "typephrase_token";
-
 export async function signIn(callback?: string) {
-  callback && setSignInCallback(callback);
-  return navigateTo("/auth/login");
+  return navigateTo(callback || "/course-pack");
 }
 
 export function signOut() {
   clearToken();
-  return navigateTo("/");
+  return navigateTo("/course-pack");
 }
 
 export function isAuthenticated() {
-  return Boolean(getToken());
+  return false;
 }
 
 export function getToken() {
-  if (!import.meta.client) return "";
-  return localStorage.getItem(TOKEN_KEY) || "";
+  return "";
 }
 
 export function setToken(token: string) {
-  if (!import.meta.client) return;
-  localStorage.setItem(TOKEN_KEY, token);
+  void token;
 }
 
-export function clearToken() {
-  if (!import.meta.client) return;
-  localStorage.removeItem(TOKEN_KEY);
-}
+export function clearToken() {}
 
 export function getSignInCallback() {
-  let callback = sessionStorage.getItem("callback");
-  if (callback) {
-    sessionStorage.removeItem("callback");
-    return callback;
-  } else {
-    return "/";
-  }
-}
-
-function setSignInCallback(callback: string) {
-  sessionStorage.setItem("callback", callback);
+  return "/course-pack";
 }

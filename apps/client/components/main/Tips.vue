@@ -26,7 +26,6 @@ import { useAnswerTip } from "~/composables/main/answerTip";
 import { useCurrentStatementEnglishSound } from "~/composables/main/englishSound";
 import { useGameMode } from "~/composables/main/game";
 import { useSummary } from "~/composables/main/summary";
-import { useMastered } from "~/composables/main/useMastered";
 import { useShortcutKeyMode } from "~/composables/user/shortcutKey";
 import { cancelShortcut, parseShortcutKeys, registerShortcut } from "~/utils/keyboardShortcuts";
 import { useAnswer } from "./QuestionInput/useAnswer";
@@ -38,7 +37,6 @@ const { playSound } = usePlaySound(shortcutKeys.value.sound);
 const { goToNextQuestion } = useAnswer();
 const { showQuestion, isQuestion } = useGameMode();
 const { submitAnswer } = useWrapperQuestionInput();
-const { handleMastered } = useMasteredShortcut();
 useShowAnswer(shortcutKeys.value.answer);
 
 const keybindings = computed(() => {
@@ -82,11 +80,6 @@ const keybindings = computed(() => {
       text: "播放发音",
       eventFn: playSound,
     },
-    {
-      keys: shortcutKeys.value.mastered,
-      text: "掌握",
-      eventFn: handleMastered,
-    },
   ];
 
   const resultItems: any = [...normalItems];
@@ -99,26 +92,6 @@ const keybindings = computed(() => {
 
   return resultItems;
 });
-
-function useMasteredShortcut() {
-  const { markStatementAsMastered } = useMastered();
-
-  function handleMastered() {
-    markStatementAsMastered();
-  }
-
-  onMounted(() => {
-    registerShortcut(shortcutKeys.value.mastered, handleMastered);
-  });
-
-  onUnmounted(() => {
-    cancelShortcut(shortcutKeys.value.mastered, handleMastered);
-  });
-
-  return {
-    handleMastered,
-  };
-}
 
 function usePlaySound(key: string) {
   const { playSound } = useCurrentStatementEnglishSound();

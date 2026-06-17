@@ -17,16 +17,13 @@ import { toast } from "vue-sonner";
 
 import { useGameMode } from "~/composables/main/game";
 import { useNavigation } from "~/composables/useNavigation";
-import { isAuthenticated } from "~/services/auth";
 import { useCourseStore } from "~/store/course";
 import { useCoursePackStore } from "~/store/coursePack";
-import { useMasteredElementsStore } from "~/store/masteredElements";
 
 const isLoading = ref(true);
 const route = useRoute();
 const coursePackStore = useCoursePackStore();
 const courseStore = useCourseStore();
-const masteredElementsStore = useMasteredElementsStore();
 const { gotoCourseList } = useNavigation();
 const { showQuestion } = useGameMode();
 
@@ -34,9 +31,6 @@ showQuestion();
 
 onMounted(async () => {
   const { coursePackId, id } = route.params;
-  if (isAuthenticated()) {
-    await masteredElementsStore.setup();
-  }
   await courseStore.setup(coursePackId as string, id as string);
   await coursePackStore.setupCoursePack(coursePackId as string);
 
