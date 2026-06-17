@@ -1,3 +1,5 @@
+import { Converter } from "opencc-js";
+
 export interface ParsedManyThingsStatement {
   chinese: string;
   english: string;
@@ -50,6 +52,7 @@ interface BuildOptions {
 const DEFAULT_MAX_WORDS = 24;
 const DEFAULT_LESSON_SIZE = 100;
 const BASE_PACK_ID = "typephrase_tatoeba_cmn_eng";
+const convertToSimplifiedChinese = Converter({ from: "tw", to: "cn" });
 
 const DIFFICULTY_GROUPS = [
   {
@@ -112,7 +115,7 @@ export function parseManyThingsText(
     if (!rawEnglish || !rawChinese || rawAttributionParts.length === 0) continue;
 
     const english = normalizeEnglishForTyping(rawEnglish);
-    const chinese = rawChinese.normalize("NFKC").trim();
+    const chinese = normalizeChinese(rawChinese);
     if (!english || !chinese || chinese.length > maxChineseLength) continue;
 
     const words = english.split(" ").filter(Boolean);
@@ -131,6 +134,10 @@ export function parseManyThingsText(
   }
 
   return statements;
+}
+
+function normalizeChinese(chinese: string): string {
+  return convertToSimplifiedChinese(chinese.normalize("NFKC").trim());
 }
 
 export function formatEspeakIpa(rawIpa: string): string {

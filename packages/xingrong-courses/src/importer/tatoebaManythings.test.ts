@@ -26,6 +26,7 @@ describe("tatoebaManythings importer helpers", () => {
       "Hi.\t嗨。\tCC-BY 2.0 (France) Attribution: tatoeba.org #1 (A) & #2 (B)",
       "Hi!\t你好。\tCC-BY 2.0 (France) Attribution: tatoeba.org #1 (A) & #3 (C)",
       "I don't know.\t我不知道。\tCC-BY 2.0 (France) Attribution: tatoeba.org #4 (A) & #5 (B)",
+      "I think you should let Tom know you can't do that next week.\t我認為你應該告訴湯姆你下週做不了。\tCC-BY 2.0 (France) Attribution: tatoeba.org #8 (A) & #9 (B)",
       "I ♥ you.\t我爱你。\tCC-BY 2.0 (France) Attribution: tatoeba.org #6 (A) & #7 (B)",
     ].join("\n");
 
@@ -43,6 +44,12 @@ describe("tatoebaManythings importer helpers", () => {
         english: "I don't know",
         attribution: "CC-BY 2.0 (France) Attribution: tatoeba.org #4 (A) & #5 (B)",
         wordCount: 3,
+      },
+      {
+        chinese: "我认为你应该告诉汤姆你下周做不了。",
+        english: "I think you should let Tom know you can't do that next week",
+        attribution: "CC-BY 2.0 (France) Attribution: tatoeba.org #8 (A) & #9 (B)",
+        wordCount: 13,
       },
     ]);
   });

@@ -373,6 +373,9 @@ importers:
       inquirer:
         specifier: ^9.2.13
         version: 9.2.23
+      opencc-js:
+        specifier: 1.3.1
+        version: 1.3.1
       pdf-parse:
         specifier: ^1.1.1
         version: 1.1.1
@@ -5930,6 +5933,9 @@ packages:
   openapi-typescript@6.7.6:
     resolution: {integrity: sha512-c/hfooPx+RBIOPM09GSxABOZhYPblDoyaGhqBkD/59vtpN21jEuWKDlM0KYTvqJVlSYjKs0tBcIdeXKChlSPtw==}
     hasBin: true
+
+  opencc-js@1.3.1:
+    resolution: {integrity: sha512-EyKDnjHNYlxo3Blll0OGH5qcyZBI3YmXpqeDEity/db50A5TFfCdvylrBlTyx1XvlSRUmh2a5AHvSf89h4u87Q==}
 
   ora@5.4.1:
     resolution: {integrity: sha512-5b6Y85tPxZZ7QytO+BQzysW31HJku27cRIlkbAXaNx+BdcVi+LlRFmVXzeF6a7JCwJpyw5c4b+YSVImQIrBpuQ==}
@@ -14920,6 +14926,8 @@ snapshots:
       supports-color: 9.4.0
       undici: 5.28.4
       yargs-parser: 21.1.1
+
+  opencc-js@1.3.1: {}
 
   ora@5.4.1:
     dependencies:
