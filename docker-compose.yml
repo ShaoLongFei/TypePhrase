@@ -1,0 +1,34 @@
+version: "3.8"
+
+services:
+  db:
+    restart: always
+    image: postgres:14-alpine
+    user: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: typephrase
+    volumes:
+      - data:/var/lib/postgres/main-data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    ports:
+      - 5433:5432
+  testdb:
+    image: postgres:14-alpine
+    user: postgres
+    volumes:
+      - data:/var/lib/postgres/test-data
+    environment:
+      POSTGRES_USER: test
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: typephrase_test
+    ports:
+      - 5480:5432
+volumes:
+  data:
+    driver: local
