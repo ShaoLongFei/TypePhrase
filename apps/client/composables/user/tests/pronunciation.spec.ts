@@ -44,4 +44,12 @@ describe("pronunciation", () => {
 
     expectPronunciation(PronunciationType.British);
   });
+
+  it("encodes English text when building the Youdao pronunciation URL", () => {
+    const { getPronunciationUrl } = usePronunciation();
+
+    expect(getPronunciationUrl("I don't know")).toBe(
+      "https://dict.youdao.com/dictvoice?type=2&audio=I%20don't%20know",
+    );
+  });
 });

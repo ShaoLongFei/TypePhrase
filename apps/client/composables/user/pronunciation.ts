@@ -50,7 +50,9 @@ export function usePronunciation() {
   }
 
   function getPronunciationUrl(english: string | undefined): string {
-    return `https://dict.youdao.com/dictvoice?type=${getPronunciationType()}&audio=${english}`;
+    return `https://dict.youdao.com/dictvoice?type=${getPronunciationType()}&audio=${encodeURIComponent(
+      english ?? "",
+    )}`;
   }
 
   // 切换发音
