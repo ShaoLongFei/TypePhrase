@@ -21,6 +21,7 @@ interface CliOptions {
   replace: boolean;
   dryRun: boolean;
   noSoundmark: boolean;
+  updateChineseOnly: boolean;
   lessonSize: number;
   maxWords: number;
   baseOrder: number;
@@ -31,6 +32,7 @@ const DEFAULT_OPTIONS: CliOptions = {
   replace: false,
   dryRun: false,
   noSoundmark: false,
+  updateChineseOnly: false,
   lessonSize: 100,
   maxWords: 24,
   baseOrder: 2,
@@ -53,8 +55,6 @@ async function main() {
 
   const rawText = fs.readFileSync(options.source, "utf-8");
   const statements = parseManyThingsText(rawText, { maxWords: options.maxWords });
-  await addSoundmarks(statements, options.noSoundmark);
-
   const packs = buildCoursePacks(statements, {
     baseOrder: options.baseOrder,
     lessonSize: options.lessonSize,
@@ -66,14 +66,29 @@ async function main() {
     return;
   }
 
+  if (options.updateChineseOnly) {
+    const { db } = await import("@earthworm/db");
+    await db.transaction(async (tx) => {
+      await updateStatementChinese(tx, packs);
+    });
+    console.log("Tatoeba / ManyThings 中文字段更新完成");
+    return;
+  }
+
   if (!options.replace) {
     throw new Error("正式导入需要显式传入 --replace，用于替换本脚本管理的 Tatoeba 课程包");
   }
 
+  await addSoundmarks(statements, options.noSoundmark);
+  const packsWithSoundmarks = buildCoursePacks(statements, {
+    baseOrder: options.baseOrder,
+    lessonSize: options.lessonSize,
+  });
+
   const { db } = await import("@earthworm/db");
   await db.transaction(async (tx) => {
     await deleteManagedCoursePacks(tx);
-    await insertCoursePacks(tx, packs);
+    await insertCoursePacks(tx, packsWithSoundmarks);
   });
 
   console.log("Tatoeba / ManyThings 课程包导入完成");
@@ -93,6 +108,8 @@ function parseArgs(argv: string[]): CliOptions {
       options.dryRun = true;
     } else if (arg === "--no-soundmark") {
       options.noSoundmark = true;
+    } else if (arg === "--update-chinese-only") {
+      options.updateChineseOnly = true;
     } else if (arg === "--source") {
       options.source = argv[++index] ?? "";
     } else if (arg === "--lesson-size") {
@@ -218,6 +235,23 @@ async function insertCoursePacks(tx: any, packs: ImportCoursePack[]) {
   }
 }
 
+async function updateStatementChinese(tx: any, packs: ImportCoursePack[]) {
+  const statements = packs.flatMap((pack) => pack.courses.flatMap((course) => course.statements));
+  let updated = 0;
+
+  for (const statement of statements) {
+    await tx
+      .update(statementSchema)
+      .set({ chinese: statement.chinese })
+      .where(eq(statementSchema.id, statement.id));
+    updated++;
+
+    if (updated % 1000 === 0) {
+      console.log(`已更新中文：${updated}/${statements.length}`);
+    }
+  }
+}
+
 function printSummary(packs: ImportCoursePack[], options: CliOptions) {
   const statementCount = packs.reduce(
     (total, pack) =>
@@ -233,6 +267,7 @@ function printSummary(packs: ImportCoursePack[], options: CliOptions) {
         source: options.source,
         dryRun: options.dryRun,
         replace: options.replace,
+        updateChineseOnly: options.updateChineseOnly,
         maxWords: options.maxWords,
         lessonSize: options.lessonSize,
         packs: packs.map((pack) => ({
