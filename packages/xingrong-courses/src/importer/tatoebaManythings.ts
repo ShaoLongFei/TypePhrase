@@ -133,6 +133,15 @@ export function parseManyThingsText(
   return statements;
 }
 
+export function formatEspeakIpa(rawIpa: string): string {
+  const ipa = rawIpa
+    .replace(/[\u200B-\u200D\uFEFF]/g, "")
+    .trim()
+    .replace(/\s+/g, " ");
+
+  return ipa ? `/${ipa}/` : "";
+}
+
 export function buildCoursePacks(
   statements: ParsedManyThingsStatement[],
   { baseOrder = 2, creatorId = "1", lessonSize = DEFAULT_LESSON_SIZE }: BuildOptions = {},

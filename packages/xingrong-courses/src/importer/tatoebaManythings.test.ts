@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   buildCoursePacks,
+  formatEspeakIpa,
   normalizeEnglishForTyping,
   parseManyThingsText,
 } from "./tatoebaManythings";
@@ -13,6 +14,11 @@ describe("tatoebaManythings importer helpers", () => {
     );
     expect(normalizeEnglishForTyping("Tom — don't move!")).toBe("Tom don't move");
     expect(normalizeEnglishForTyping("I ♥ TypePhrase")).toBeNull();
+  });
+
+  it("formats espeak IPA output for storage", () => {
+    expect(formatEspeakIpa(" a‍ɪ   dˈo‍ʊ \n")).toBe("/aɪ dˈoʊ/");
+    expect(formatEspeakIpa("")).toBe("");
   });
 
   it("parses, filters, and de-duplicates ManyThings rows", () => {

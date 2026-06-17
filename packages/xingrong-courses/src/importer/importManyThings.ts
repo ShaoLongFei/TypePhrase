@@ -11,6 +11,7 @@ import {
 import type { ImportCoursePack, ParsedManyThingsStatement } from "./tatoebaManythings";
 import {
   buildCoursePacks,
+  formatEspeakIpa,
   parseManyThingsText,
   TATOEBA_MANYTHINGS_PACK_IDS,
 } from "./tatoebaManythings";
@@ -160,8 +161,7 @@ function generateSoundmark(english: string): { soundmark: string; espeakUnavaila
     return { soundmark: "", espeakUnavailable: false };
   }
 
-  const ipa = result.stdout.trim().replace(/\s+/g, " ");
-  return { soundmark: ipa ? `/${ipa}/` : "", espeakUnavailable: false };
+  return { soundmark: formatEspeakIpa(result.stdout), espeakUnavailable: false };
 }
 
 async function deleteManagedCoursePacks(tx: any) {
