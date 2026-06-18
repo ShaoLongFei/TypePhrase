@@ -33,7 +33,7 @@ export class MasteredElementService {
 
     await this.db.execute(sql`
       UPDATE mastered_elements
-      SET content = jsonb_build_object('english', ${normalizedContent.english})
+      SET content = jsonb_build_object('english', ${normalizedContent.english}::text)
       WHERE id = ${entity.id}
     `);
 
