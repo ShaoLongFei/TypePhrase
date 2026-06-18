@@ -20,7 +20,6 @@ async function bootstrap() {
     .setTitle("TypePhrase Swagger")
     .setDescription("The TypePhrase API description")
     .setVersion("v1.0")
-    .addBearerAuth()
     .build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup("/swagger", app, document);

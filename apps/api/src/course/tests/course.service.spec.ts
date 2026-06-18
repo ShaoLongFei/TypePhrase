@@ -6,16 +6,12 @@ import type { DbType } from "../../global/providers/db.provider";
 import { insertCourse, insertCoursePack, insertStatement } from "../../../test/fixture/db";
 import { cleanDB, testImportModules } from "../../../test/helper/utils";
 import { endDB } from "../../common/db";
-import { CourseHistoryService } from "../../course-history/course-history.service";
 import { DB } from "../../global/providers/db.provider";
-import { UserCourseProgressService } from "../../user-course-progress/user-course-progress.service";
 import { CourseService } from "../course.service";
 
 describe("course service", () => {
   let db: DbType;
   let courseService: CourseService;
-  let courseHistoryService: CourseHistoryService;
-  let userCourseProgressService: UserCourseProgressService;
 
   beforeAll(async () => {
     const testHelper = await setupTesting();
@@ -23,8 +19,6 @@ describe("course service", () => {
 
     db = testHelper.db;
     courseService = testHelper.courseService;
-    courseHistoryService = testHelper.courseHistoryService;
-    userCourseProgressService = testHelper.UserCourseProgressService;
   });
   beforeEach(async () => {
     await cleanDB(db);
@@ -57,20 +51,6 @@ describe("course service", () => {
     });
   });
 
-  describe("findWithUserProgress", () => {
-    it("should return a course with user progress information", async () => {
-      const { coursePackId, courseEntityFirst, userId } = await setupDBData(db);
-
-      const result = await courseService.findWithUserProgress(
-        coursePackId,
-        courseEntityFirst.id,
-        userId,
-      );
-
-      expect(result).toHaveProperty("statementIndex");
-    });
-  });
-
   describe("findNext", () => {
     it("should return the next course", async () => {
       const { coursePackId, courseEntityFirst, courseEntitySecond } = await setupDBData(db);
@@ -90,30 +70,18 @@ describe("course service", () => {
   });
 
   describe("completeCourse", () => {
-    it("should perform actions to complete a course for a user with userId and return the next course", async () => {
-      const { userId, courseEntityFirst, coursePackId } = await setupDBData(db);
-
-      const result = await courseService.completeCourse(userId, coursePackId, courseEntityFirst.id);
-
-      expect(result).toHaveProperty("nextCourse");
-      expect(courseHistoryService.upsert).toHaveBeenCalled();
-      expect(userCourseProgressService.upsert).toHaveBeenCalled();
-    });
-
-    it("should perform actions to complete a course and return the next course when have not userId", async () => {
+    it("should complete a course anonymously and return the next course", async () => {
       const { courseEntityFirst, coursePackId } = await setupDBData(db);
 
-      const result = await courseService.completeCourse("", coursePackId, courseEntityFirst.id);
+      const result = await courseService.completeCourse(coursePackId, courseEntityFirst.id);
 
       expect(result).toHaveProperty("nextCourse");
-      expect(courseHistoryService.upsert).not.toHaveBeenCalled();
-      expect(userCourseProgressService.upsert).not.toHaveBeenCalled();
     });
 
     it("should not have nextCourse when not exist next course", async () => {
       const { courseEntitySecond, coursePackId } = await setupDBData(db);
 
-      const result = await courseService.completeCourse("", coursePackId, courseEntitySecond.id);
+      const result = await courseService.completeCourse(coursePackId, courseEntitySecond.id);
 
       expect(result.nextCourse).toBeUndefined();
     });
@@ -125,34 +93,19 @@ async function setupDatabaseData(db: DbType) {
 }
 
 async function setupTesting() {
-  const mockCourseHistoryService = {
-    upsert: jest.fn(),
-  };
-  const mockUserCourseProgressService = {
-    upsert: jest.fn(),
-    findStatement: () => 1,
-  };
-
   const moduleRef = await Test.createTestingModule({
     imports: testImportModules,
-    providers: [
-      CourseService,
-      { provide: CourseHistoryService, useValue: mockCourseHistoryService },
-      { provide: UserCourseProgressService, useValue: mockUserCourseProgressService },
-    ],
+    providers: [CourseService],
   }).compile();
 
   return {
     courseService: moduleRef.get<CourseService>(CourseService),
-    UserCourseProgressService: moduleRef.get<UserCourseProgressService>(UserCourseProgressService),
-    courseHistoryService: moduleRef.get<CourseHistoryService>(CourseHistoryService),
     db: moduleRef.get<DbType>(DB),
     moduleRef,
   };
 }
 
 async function setupDBData(db: DbType) {
-  const userId = "cxr";
   const coursePackEntity = await insertCoursePack(db);
   const courseEntityFirst = await insertCourse(db, coursePackEntity.id, {
     title: "第一课",
@@ -166,7 +119,6 @@ async function setupDBData(db: DbType) {
   const statementEntitySecond = await insertStatement(db, courseEntityFirst.id, 2);
 
   return {
-    userId,
     coursePackId: coursePackEntity.id,
     courseEntityFirst,
     courseEntitySecond,

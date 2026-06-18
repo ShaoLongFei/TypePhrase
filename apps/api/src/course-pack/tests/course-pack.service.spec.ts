@@ -6,7 +6,6 @@ import type { DbType } from "../../global/providers/db.provider";
 import { insertCourse, insertCoursePack } from "../../../test/fixture/db";
 import { cleanDB, testImportModules } from "../../../test/helper/utils";
 import { endDB } from "../../common/db";
-import { CourseHistoryService } from "../../course-history/course-history.service";
 import { CourseService } from "../../course/course.service";
 import { DB } from "../../global/providers/db.provider";
 import { CoursePackService } from "../course-pack.service";
@@ -81,89 +80,63 @@ describe("CoursePackService", () => {
   });
 
   describe("findOneWithCourses", () => {
-    it("should return a course pack with courses and completion counts when userId is provided and course pack is public", async () => {
-      const userId = "cxr";
+    it("should return a public course pack with courses", async () => {
       const coursePackEntity = await insertCoursePack(db, { shareLevel: "public" });
       await insertCourse(db, coursePackEntity.id);
 
-      const result = await coursePackService.findOneWithCourses(userId, coursePackEntity.id);
+      const result = await coursePackService.findOneWithCourses(coursePackEntity.id);
 
       expect(result.courses.length).toBe(1);
-      expect(result.courses[0]).toHaveProperty("completionCount");
     });
 
     it("should throw NotFoundException when course pack is private", async () => {
-      const userId = "cxr";
       const coursePackEntity = await insertCoursePack(db, {
         shareLevel: "private",
-        creatorId: userId,
+        creatorId: "cxr",
       });
       await insertCourse(db, coursePackEntity.id);
 
-      await expect(
-        coursePackService.findOneWithCourses(userId, coursePackEntity.id),
-      ).rejects.toThrow(NotFoundException);
+      await expect(coursePackService.findOneWithCourses(coursePackEntity.id)).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it("should throw NotFoundException when course pack ID does not exist", async () => {
-      const userId = "cxr";
       const nonExistentCoursePackId = "non-existent-id";
 
-      await expect(
-        coursePackService.findOneWithCourses(userId, nonExistentCoursePackId),
-      ).rejects.toThrow(NotFoundException);
+      await expect(coursePackService.findOneWithCourses(nonExistentCoursePackId)).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
-    it("should throw NotFoundException when course pack is private and user is not the creator", async () => {
-      const userId = "cxr";
+    it("should throw NotFoundException when course pack is private even if it has a creator", async () => {
       const coursePackEntity = await insertCoursePack(db, {
         shareLevel: "private",
         creatorId: "another-user-id",
       });
       await insertCourse(db, coursePackEntity.id);
 
-      await expect(
-        coursePackService.findOneWithCourses(userId, coursePackEntity.id),
-      ).rejects.toThrow(NotFoundException);
-    });
-
-    it("should return a course pack with courses without completion counts when userId is not provided", async () => {
-      const notUserId = "";
-      const coursePackEntity = await insertCoursePack(db, { shareLevel: "public" });
-      await insertCourse(db, coursePackEntity.id);
-
-      const result = await coursePackService.findOneWithCourses(notUserId, coursePackEntity.id);
-
-      expect(result.courses.length).toBe(1);
-      expect(result.courses[0]).not.toHaveProperty("completionCount");
+      await expect(coursePackService.findOneWithCourses(coursePackEntity.id)).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it("should throw NotFoundException when course pack is founder_only", async () => {
-      const userId = "founderUser";
       const coursePackEntity = await insertCoursePack(db, {
         shareLevel: "founder_only",
         creatorId: "another-user-id",
       });
       await insertCourse(db, coursePackEntity.id);
 
-      await expect(
-        coursePackService.findOneWithCourses(userId, coursePackEntity.id),
-      ).rejects.toThrow(NotFoundException);
+      await expect(coursePackService.findOneWithCourses(coursePackEntity.id)).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
   describe("findCourse", () => {
-    it("should call courseService.findWithUserProgress when userId is provided", async () => {
-      await coursePackService.findCourse("cxr", fakeCoursePackId, fakeCourseId);
-
-      expect(courseService);
-
-      expect(courseService.findWithUserProgress).toHaveBeenCalled();
-    });
-
-    it("should call courseService.find when userId is not provided", async () => {
-      const notUserId = "";
-      await coursePackService.findCourse(notUserId, fakeCoursePackId, fakeCourseId);
+    it("should call courseService.find", async () => {
+      await coursePackService.findCourse(fakeCoursePackId, fakeCourseId);
 
       expect(courseService);
 
@@ -181,7 +154,7 @@ describe("CoursePackService", () => {
 
   describe("completeCourse", () => {
     it("should call courseService.completeCourse", async () => {
-      await coursePackService.completeCourse("cxr", fakeCoursePackId, fakeCourseId);
+      await coursePackService.completeCourse(fakeCoursePackId, fakeCourseId);
 
       expect(courseService.completeCourse).toHaveBeenCalled();
     });
@@ -190,37 +163,23 @@ describe("CoursePackService", () => {
 
 async function setupTesting() {
   const MockCourseService = {
-    findWithUserProgress: jest.fn(),
     find: jest.fn(),
     findNext: jest.fn(),
     completeCourse: jest.fn(),
   };
 
-  const MockCourseHistoryService = {
-    findCompletionCount: jest.fn(() => 1),
-  };
-
   const moduleRef = await Test.createTestingModule({
     imports: testImportModules,
-    providers: [
-      CoursePackService,
-      { provide: CourseService, useValue: MockCourseService },
-      {
-        provide: CourseHistoryService,
-        useValue: MockCourseHistoryService,
-      },
-    ],
+    providers: [CoursePackService, { provide: CourseService, useValue: MockCourseService }],
   }).compile();
 
   const courseService = moduleRef.get<CourseService>(CourseService);
-  const courseHistoryService = moduleRef.get<CourseHistoryService>(CourseHistoryService);
   const coursePackService = moduleRef.get<CoursePackService>(CoursePackService);
 
   return {
     moduleRef,
     courseService,
     coursePackService,
-    courseHistoryService,
     db: moduleRef.get<DbType>(DB),
   };
 }

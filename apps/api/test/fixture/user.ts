@@ -9,7 +9,7 @@ export function createUser(): UserEntity {
   };
 }
 
-export const getTokenOwner = () => "123456";
+export const getTestUserId = () => "123456";
 
 export async function createLocalUser(db: DbType, username: string) {
   const [data] = await db

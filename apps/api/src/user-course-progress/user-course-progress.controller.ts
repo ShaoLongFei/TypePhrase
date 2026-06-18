@@ -1,12 +1,11 @@
 import { Body, Controller, Get, Put, Query, UseGuards } from "@nestjs/common";
-import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
+import { ApiTags } from "@nestjs/swagger";
 
 import { AuthGuard } from "../guards/auth.guard";
 import { User, UserEntity } from "../user/user.decorators";
 import { UpsertUserProgressDto } from "./model/user-progress.dto";
 import { UserCourseProgressService } from "./user-course-progress.service";
 
-@ApiBearerAuth()
 @ApiTags("UserProgress")
 @Controller("user-course-progress")
 export class UserProgressController {

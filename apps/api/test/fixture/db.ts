@@ -1,7 +1,7 @@
 import { DbType } from "src/global/providers/db.provider";
 
 import { course, coursePack, statement, userCourseProgress } from "@earthworm/schema";
-import { getTokenOwner } from "../../test/fixture/user";
+import { getTestUserId } from "../../test/fixture/user";
 
 type CoursePackInsert = typeof coursePack.$inferInsert;
 
@@ -84,7 +84,7 @@ export async function insertUserCourseProgress(
   const [entity] = await db
     .insert(userCourseProgress)
     .values({
-      userId: getTokenOwner(),
+      userId: getTestUserId(),
       coursePackId,
       courseId,
       statementIndex,

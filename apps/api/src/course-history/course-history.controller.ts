@@ -1,11 +1,10 @@
 import { Controller, Get, Param, UseGuards } from "@nestjs/common";
-import { ApiBearerAuth, ApiOperation, ApiTags } from "@nestjs/swagger";
+import { ApiOperation, ApiTags } from "@nestjs/swagger";
 
 import { AuthGuard } from "../guards/auth.guard";
 import { User, UserEntity } from "../user/user.decorators";
 import { CourseHistoryService } from "./course-history.service";
 
-@ApiBearerAuth()
 @ApiTags("CourseHistory")
 @Controller("course-history")
 export class CourseHistoryController {

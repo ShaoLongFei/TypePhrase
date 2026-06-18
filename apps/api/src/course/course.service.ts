@@ -1,18 +1,12 @@
 import { Inject, Injectable, NotFoundException } from "@nestjs/common";
-import { and, asc, eq, gt } from "drizzle-orm";
+import { and, asc, eq } from "drizzle-orm";
 
 import { course, statement } from "@earthworm/schema";
-import { CourseHistoryService } from "../course-history/course-history.service";
 import { DB, DbType } from "../global/providers/db.provider";
-import { UserCourseProgressService } from "../user-course-progress/user-course-progress.service";
 
 @Injectable()
 export class CourseService {
-  constructor(
-    @Inject(DB) private db: DbType,
-    private readonly courseHistoryService: CourseHistoryService,
-    private readonly userCourseProgressService: UserCourseProgressService,
-  ) {}
+  constructor(@Inject(DB) private db: DbType) {}
 
   async find(coursePackId: string, courseId: string) {
     const courseEntity = await this.db.query.course.findFirst({
@@ -34,18 +28,6 @@ export class CourseService {
     }
 
     return courseEntity;
-  }
-
-  async findWithUserProgress(coursePackId: string, courseId: string, userId: string) {
-    const courseEntity = await this.find(coursePackId, courseId);
-
-    const statementIndex = await this.userCourseProgressService.findStatement(
-      userId,
-      coursePackId,
-      courseId,
-    );
-
-    return { ...courseEntity, statementIndex };
   }
 
   async findNext(coursePackId: string, courseId: string) {
@@ -72,17 +54,11 @@ export class CourseService {
     return nextCourse;
   }
 
-  async completeCourse(userId: string, coursePackId: string, courseId: string) {
+  async completeCourse(coursePackId: string, courseId: string) {
     const nextCourse = await this._findNext(coursePackId, courseId);
 
-    if (userId) {
-      await this.courseHistoryService.upsert(userId, coursePackId, courseId);
-      nextCourse &&
-        (await this.userCourseProgressService.upsert(userId, coursePackId, nextCourse.id, 0));
-    }
-
     return {
-      nextCourse: await this._findNext(coursePackId, courseId),
+      nextCourse,
     };
   }
 }

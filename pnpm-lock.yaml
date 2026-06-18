@@ -114,9 +114,6 @@ importers:
       drizzle-orm:
         specifier: ^0.32.0
         version: 0.32.0(@electric-sql/pglite@0.1.5)(@opentelemetry/api@1.9.0)(pg@8.12.0)(postgres@3.4.4)
-      jose:
-        specifier: ^5.2.4
-        version: 5.4.0
       postgres:
         specifier: ^3.4.4
         version: 3.4.4
@@ -5207,9 +5204,6 @@ packages:
 
   joi@17.13.1:
     resolution: {integrity: sha512-vaBlIKCyo4FCUtCm7Eu4QZd/q02bWcxfUO6YSXAZOWF6gzcLBeba8kwotUdYJjDLW8Cz8RywsSOqiNJZW0mNvg==}
-
-  jose@5.4.0:
-    resolution: {integrity: sha512-6rpxTHPAQyWMb9A35BroFl1Sp0ST3DpPcm5EVIxZxdH+e0Hv9fwhyB3XLKFUcHNpdSDnETmBfuPPTTlYz5+USw==}
 
   joycon@3.1.1:
     resolution: {integrity: sha512-34wB/Y7MW7bzjKRjUKTa46I2Z7eV62Rkhva+KkopW7Qvv/OSWBqvkSY7vusOPrNuZcUG3tApvdVgNB8POj3SPw==}
@@ -13995,8 +13989,6 @@ snapshots:
       '@sideway/address': 4.1.5
       '@sideway/formula': 3.0.1
       '@sideway/pinpoint': 2.0.0
-
-  jose@5.4.0: {}
 
   joycon@3.1.1: {}
 
