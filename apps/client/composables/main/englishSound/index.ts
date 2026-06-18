@@ -19,7 +19,7 @@ export function useCurrentStatementEnglishSound() {
     const word = courseStore.currentStatement?.english;
     const pronunciationUrl = getPronunciationUrl(word);
     if (lastPronunciationUrl !== pronunciationUrl) {
-      updateSource(pronunciationUrl);
+      updateSource(pronunciationUrl, word);
     }
     lastPronunciationUrl = pronunciationUrl;
   });
@@ -39,12 +39,12 @@ export function useCurrentStatementEnglishSound() {
 // 朗读每日一句
 export function readOneSentencePerDayAloud(str: string) {
   const pronunciationUrl = getPronunciationUrl(str);
-  updateSource(pronunciationUrl);
+  updateSource(pronunciationUrl, str);
   play();
 }
 
 export function playEnglish(english: string) {
   const pronunciationUrl = getPronunciationUrl(english);
-  updateSource(pronunciationUrl);
+  updateSource(pronunciationUrl, english);
   play();
 }

@@ -3,7 +3,10 @@ import { usePronunciation } from "~/composables/user/pronunciation";
 // 便于测试
 // 后面不使用 audio 后也可以不破坏业务逻辑
 const audio = new Audio();
-export function updateSource(src: string) {
+let fallbackText = "";
+
+export function updateSource(src: string, text = "") {
+  fallbackText = text;
   audio.src = src;
   audio.load();
 }
@@ -29,7 +32,13 @@ export function usePlayWordSound() {
     }
     lastWord = word;
     wordAudio.src = getPronunciationUrl(word);
-    wordAudio.play();
+    wordAudio.onerror = () => {
+      playBrowserSpeech(word);
+    };
+    const playResult = wordAudio.play();
+    playResult?.catch?.(() => {
+      playBrowserSpeech(word);
+    });
   }
 
   return {
@@ -53,7 +62,20 @@ export function play(playOptions?: PlayOptions) {
   const { times, rate, interval } = Object.assign({}, DefaultPlayOptions, playOptions);
 
   audio.playbackRate = rate;
-  audio.play();
+  let stopBrowserSpeech = () => {};
+  let didFallback = false;
+
+  function playFallback() {
+    if (didFallback) return;
+    didFallback = true;
+    stopBrowserSpeech = playBrowserSpeech(fallbackText, { rate });
+  }
+
+  audio.onerror = playFallback;
+
+  const playResult = audio.play();
+  playResult?.catch?.(playFallback);
+
   if (times > 1) {
     audio.addEventListener("ended", handleEnded, false);
   }
@@ -76,6 +98,27 @@ export function play(playOptions?: PlayOptions) {
     audio.pause();
     audio.currentTime = 0;
     audio.removeEventListener("ended", handleEnded);
+    stopBrowserSpeech();
     timeoutId && clearTimeout(timeoutId);
+  };
+}
+
+function playBrowserSpeech(text: string, options?: Pick<PlayOptions, "rate">) {
+  const speechSynthesis = globalThis.speechSynthesis;
+  const Utterance = globalThis.SpeechSynthesisUtterance;
+
+  if (!text || !speechSynthesis || !Utterance) {
+    return () => {};
+  }
+
+  const utterance = new Utterance(text);
+  utterance.lang = "en-US";
+  utterance.rate = options?.rate ?? 1;
+
+  speechSynthesis.cancel();
+  speechSynthesis.speak(utterance);
+
+  return () => {
+    speechSynthesis.cancel();
   };
 }
