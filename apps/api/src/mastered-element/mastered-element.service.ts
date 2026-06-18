@@ -13,11 +13,12 @@ export class MasteredElementService {
   constructor(@Inject(DB) private db: DbType) {}
 
   async addMasteredElement(userId: string, content: ElementContent) {
-    if (!content.english) {
+    const normalizedContent = this.parseContent(content);
+    if (!normalizedContent?.english) {
       throw new BadRequestException("Element english content is required");
     }
 
-    if (await this.isMastered(userId, content)) {
+    if (await this.isMastered(userId, normalizedContent)) {
       throw new BadRequestException("这个内容已经掌握了");
     }
 
@@ -25,7 +26,7 @@ export class MasteredElementService {
       .insert(masteredElementsSchema)
       .values({
         userId,
-        content,
+        content: normalizedContent,
         masteredAt: new Date(),
       })
       .returning();
