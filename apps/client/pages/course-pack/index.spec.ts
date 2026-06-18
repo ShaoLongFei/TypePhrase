@@ -1,5 +1,6 @@
 import { flushPromises, mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { defineComponent } from "vue";
 
 import CoursePackIndex from "./index.vue";
 
@@ -28,15 +29,24 @@ vi.mock("~/store/coursePack", () => ({
   }),
 }));
 
+const AuthGateStub = defineComponent({
+  emits: ["authenticated"],
+  template: "<div><slot /></div>",
+  mounted() {
+    this.$emit("authenticated");
+  },
+});
+
 describe("course pack page", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it("opens any course pack directly", async () => {
+  it("opens a course pack after auth gate allows access", async () => {
     const wrapper = mount(CoursePackIndex, {
       global: {
         stubs: {
+          AuthGate: AuthGateStub,
           Loading: true,
           NuxtImg: true,
         },

@@ -41,11 +41,13 @@ describe("user", () => {
   it("logs in with phone and password", async () => {
     const userStore = useUserStore();
     vi.mocked(fetchLogin).mockResolvedValue(generateUserInfo());
+    userStore.openAuth("login");
 
     await userStore.login({ phone: "1234567890", password: "password123" });
 
     expect(fetchLogin).toHaveBeenCalledWith({ phone: "1234567890", password: "password123" });
     expect(userStore.user?.id).toBe("123");
+    expect(userStore.isAuthModalOpen).toBe(false);
   });
 
   it("registers with username, phone and password", async () => {
@@ -84,5 +86,18 @@ describe("user", () => {
 
     expect(fetchLogout).toHaveBeenCalled();
     expect(userStore.user).toBeUndefined();
+  });
+
+  it("opens and closes the shared auth modal", () => {
+    const userStore = useUserStore();
+
+    userStore.openAuth("register");
+
+    expect(userStore.isAuthModalOpen).toBe(true);
+    expect(userStore.authMode).toBe("register");
+
+    userStore.closeAuth();
+
+    expect(userStore.isAuthModalOpen).toBe(false);
   });
 });

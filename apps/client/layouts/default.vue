@@ -11,8 +11,11 @@
         </div>
       </div>
       <Footer></Footer>
+      <AuthModal />
     </div>
   </div>
 </template>
 
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import AuthModal from "~/components/auth/AuthModal.vue";
+</script>

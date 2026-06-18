@@ -1,20 +1,23 @@
 <template>
-  <div class="flex w-full flex-col pt-2">
-    <template v-if="isLoading">
-      <Loading></Loading>
-    </template>
-    <template v-else>
-      <MainTool />
-      <MainGame />
-    </template>
-  </div>
+  <AuthGate @authenticated="setup">
+    <div class="flex w-full flex-col pt-2">
+      <template v-if="isLoading">
+        <Loading></Loading>
+      </template>
+      <template v-else>
+        <MainTool />
+        <MainGame />
+      </template>
+    </div>
+  </AuthGate>
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { ref } from "vue";
 import { useRoute } from "vue-router";
 import { toast } from "vue-sonner";
 
+import AuthGate from "~/components/auth/AuthGate.vue";
 import { useGameMode } from "~/composables/main/game";
 import { useNavigation } from "~/composables/useNavigation";
 import { useCourseStore } from "~/store/course";
@@ -29,7 +32,7 @@ const { showQuestion } = useGameMode();
 
 showQuestion();
 
-onMounted(async () => {
+async function setup() {
   const { coursePackId, id } = route.params;
   await courseStore.setup(coursePackId as string, id as string);
   await coursePackStore.setupCoursePack(coursePackId as string);
@@ -44,5 +47,5 @@ onMounted(async () => {
     return;
   }
   isLoading.value = false;
-});
+}
 </script>
