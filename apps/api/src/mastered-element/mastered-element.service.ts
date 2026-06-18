@@ -1,5 +1,5 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 
 import { masteredElements as masteredElementsSchema } from "@earthworm/schema";
 import { DB, DbType } from "../global/providers/db.provider";
@@ -26,7 +26,7 @@ export class MasteredElementService {
       .insert(masteredElementsSchema)
       .values({
         userId,
-        content: normalizedContent,
+        content: sql`${JSON.stringify(normalizedContent)}::jsonb`,
         masteredAt: new Date(),
       })
       .returning();
