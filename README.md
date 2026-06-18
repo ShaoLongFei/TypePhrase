@@ -69,37 +69,13 @@ cp ./apps/api/.env.example ./apps/api/.env
 cp ./apps/client/.env.example ./apps/client/.env
 ```
 
-### 3. Start Docker Compose Service
+### 3. Prepare PostgreSQL
 
-The backend relies on Postgres and Redis services. Start and stop these services using the commands configured in `package.json` below.
-
-```bash
-# start
-pnpm docker:start
-
-# When needed, execute the following command
-# stop
-pnpm docker:stop
-# delete
-pnpm docker:delete
-# Complete deletion (including Volume data)
-pnpm docker:down
-```
-
-If you prefer manual, you can use the commands below.
-
-```bash
-docker compose up -d
-docker compose stop
-docker compose down
-
-# commands compatible with older versions of Docker
-docker-compose up -d
-```
+TypePhrase does not start PostgreSQL through this repository. Create or reuse an existing PostgreSQL database, then set `DATABASE_URL` in `apps/api/.env`. The production deployment uses the shared PostgreSQL instance on `lxc-dev` with a dedicated `typephrase` database.
 
 ### 4. Initialize Database Schema
 
-When executing this command, try to keep a little time from the previous command, because the `-d` parameter just used will suspend its service execution in the background. At this time, the docker service may still be running. If an error is found, execute it again.
+Run this after `DATABASE_URL` points to the target PostgreSQL database.
 
 ```bash
 pnpm db:init
@@ -150,7 +126,7 @@ pnpm test:unit:watch
 
 Mainly Jest single test and end-to-end test, but need to access the test database, so you need to ensure that:
 
-1. testdb and testRedis services in Docker Compose started normally.
+1. A PostgreSQL test database is available.
 2. The configuration information in the `.env.test` file is correct. If there is no such file, you can copy the contents of the `apps/api/.env.test.example` file to the `apps/api/.env.test` file. The following command is provided to directly use.
 
 Execute the following command:

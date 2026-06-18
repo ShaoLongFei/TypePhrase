@@ -69,37 +69,13 @@ cp ./apps/api/.env.example ./apps/api/.env
 cp ./apps/client/.env.example ./apps/client/.env
 ```
 
-### 3. 启动 Docker Compose 服务
+### 3. 准备 PostgreSQL
 
-后端用到了 Postgres 和 Redis 服务，通过下面在 `package.json` 中配置的命令启动和停止。
-
-```bash
-# 启动
-pnpm docker:start
-
-# 下面这些命令等你用的时候在执行，不要傻乎乎的刚启动就停止哈 😊
-# 停止
-pnpm docker:stop
-# 删除
-pnpm docker:delete
-# 完全删除（包括 Volume 数据）
-pnpm docker:down
-```
-
-当然如果你更喜欢手动挡
-
-```bash
-docker compose up -d
-docker compose stop
-docker compose down
-
-# 兼容老版本 docker 的命令
-docker-compose up -d
-```
+TypePhrase 不再通过本仓库启动 PostgreSQL。请先创建或复用一个已有 PostgreSQL 数据库，然后在 `apps/api/.env` 中配置 `DATABASE_URL`。生产部署使用 `lxc-dev` 上的共享 PostgreSQL 实例，并使用独立的 `typephrase` 数据库。
 
 ### 4. 初始化数据库表结构
 
-执行这个命令时，尽量与上个命令间隔一点时间，因为刚刚使用的 `-d` 参数会让其服务挂起在后台执行，此时 docker 服务可能还在 running 中，若是发现报错了那就再执行一遍。😊
+请在 `DATABASE_URL` 指向目标 PostgreSQL 数据库后执行。
 
 ```bash
 pnpm db:init
@@ -150,7 +126,7 @@ pnpm test:unit:watch
 
 主要就是 Jest 的单测和端对端测试，但需要接入测试的数据库，所以需要先确保：
 
-1. Docker Compose 中的 testdb 和 testRedis 服务正常启动。
+1. PostgreSQL 测试数据库可用。
 2. `.env.test` 文件中的配置信息是正确的，如果没有这个文件，可以复制 `apps/api/.env.test.example` 文件内容到 `apps/api/.env.test` 文件，下面有提供命令直接用。
 
 执行以下命令：
