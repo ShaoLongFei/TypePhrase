@@ -32,9 +32,9 @@ export class MasteredElementService {
       .returning();
 
     await this.db.execute(sql`
-      UPDATE ${masteredElementsSchema}
-      SET ${masteredElementsSchema.content} = ${JSON.stringify(normalizedContent)}::jsonb
-      WHERE ${masteredElementsSchema.id} = ${entity.id}
+      UPDATE mastered_elements
+      SET content = ${JSON.stringify(normalizedContent)}::jsonb
+      WHERE id = ${entity.id}
     `);
 
     entity.content = normalizedContent;
