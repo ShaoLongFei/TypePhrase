@@ -4,11 +4,13 @@ import { ref } from "vue";
 
 import { fetchCompleteCourse, fetchCourse } from "~/api/course";
 import { fetchAddMasteredElement } from "~/api/mastered-elements";
+import { fetchUpsertUserCourseProgress } from "~/api/user-course-progress";
 import { useActiveCourseMap } from "~/composables/courses/activeCourse";
 import { useCourseStore } from "../course";
 
 vi.mock("~/api/course");
 vi.mock("~/api/mastered-elements");
+vi.mock("~/api/user-course-progress");
 vi.mock("~/composables/courses/activeCourse");
 
 vi.mock("../statement.ts", () => {
@@ -75,6 +77,7 @@ describe("CourseStore", () => {
   beforeEach(async () => {
     setActivePinia(createPinia());
     vi.mocked(fetchCourse).mockResolvedValue(cloneCourse());
+    vi.mocked(fetchUpsertUserCourseProgress).mockResolvedValue(undefined);
     vi.mocked(useActiveCourseMap).mockReturnValue({
       updateActiveCourseMap: vi.fn(),
     } as any);
@@ -96,12 +99,29 @@ describe("CourseStore", () => {
       await courseStore.setup("pack1", "1");
       expect(courseStore.statementIndex).toBe(0);
     });
+
+    it("should initialize at the saved statement index", async () => {
+      vi.mocked(fetchCourse).mockResolvedValue({ ...cloneCourse(), statementIndex: 2 });
+      await courseStore.setup("pack1", "1");
+
+      expect(courseStore.statementIndex).toBe(2);
+    });
   });
 
   describe("Statement navigation", () => {
     it("should navigate to the next unmastered statement", () => {
       courseStore.toNextStatement();
       expect(courseStore.statementIndex).toBe(1);
+    });
+
+    it("should save user progress when navigating to the next statement", () => {
+      courseStore.toNextStatement();
+
+      expect(fetchUpsertUserCourseProgress).toHaveBeenCalledWith({
+        coursePackId: "pack1",
+        courseId: "1",
+        statementIndex: 1,
+      });
     });
 
     it("should navigate to the previous unmastered statement", () => {

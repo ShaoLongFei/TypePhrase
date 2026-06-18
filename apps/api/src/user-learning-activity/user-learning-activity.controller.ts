@@ -32,6 +32,8 @@ export class UserLearningActivityController {
       new Date(activityData.date),
       activityData.activityType,
       activityData.duration,
+      activityData.courseId,
+      activityData.metadata,
     );
 
     return result;

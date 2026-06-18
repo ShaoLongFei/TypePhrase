@@ -201,7 +201,10 @@ function useCourse() {
   async function completeCourse() {
     if (courseStore.currentCourse) {
       const { coursePackId } = courseStore.currentCourse;
-      const { nextCourse } = await courseStore.completeCourse();
+      const { nextCourse } = await courseStore.completeCourse({
+        duration: courseTimer.calculateTotalTime(),
+        count: courseTimer.totalRecordNumber(),
+      });
 
       if (nextCourse) {
         nextCourseId.value = nextCourse.id;

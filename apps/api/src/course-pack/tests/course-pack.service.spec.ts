@@ -6,8 +6,12 @@ import type { DbType } from "../../global/providers/db.provider";
 import { insertCourse, insertCoursePack } from "../../../test/fixture/db";
 import { cleanDB, testImportModules } from "../../../test/helper/utils";
 import { endDB } from "../../common/db";
+import { CourseHistoryService } from "../../course-history/course-history.service";
 import { CourseService } from "../../course/course.service";
 import { DB } from "../../global/providers/db.provider";
+import { UserCourseProgressService } from "../../user-course-progress/user-course-progress.service";
+import { UserLearnRecordService } from "../../user-learn-record/user-learn-record.service";
+import { UserLearningActivityService } from "../../user-learning-activity/user-learning-activity.service";
 import { CoursePackService } from "../course-pack.service";
 
 describe("CoursePackService", () => {
@@ -153,13 +157,45 @@ describe("CoursePackService", () => {
   });
 
   describe("completeCourse", () => {
-    it("should call courseService.completeCourse", async () => {
-      await coursePackService.completeCourse(fakeCoursePackId, fakeCourseId);
+    it("should record user learning data when completing a course", async () => {
+      const userId = "user-1";
+      const completedAt = new Date("2026-06-18T08:00:00.000Z");
+
+      await coursePackService.completeCourse(fakeCoursePackId, fakeCourseId, userId, {
+        duration: 30,
+        count: 5,
+        completedAt,
+      });
 
       expect(courseService.completeCourse).toHaveBeenCalled();
+      expect(testMocks.courseHistoryService.upsert).toHaveBeenCalledWith(
+        userId,
+        fakeCoursePackId,
+        fakeCourseId,
+      );
+      expect(testMocks.userLearningActivityService.upsertActivity).toHaveBeenCalledWith(
+        userId,
+        completedAt,
+        "course_learning_time",
+        30,
+        fakeCourseId,
+        { coursePackId: fakeCoursePackId },
+      );
+      expect(testMocks.userLearnRecordService.increment).toHaveBeenCalledWith(
+        userId,
+        completedAt,
+        5,
+      );
     });
   });
 });
+
+let testMocks: {
+  courseHistoryService: Pick<CourseHistoryService, "upsert">;
+  userCourseProgressService: Pick<UserCourseProgressService, "findStatement">;
+  userLearningActivityService: Pick<UserLearningActivityService, "upsertActivity">;
+  userLearnRecordService: Pick<UserLearnRecordService, "increment">;
+};
 
 async function setupTesting() {
   const MockCourseService = {
@@ -167,10 +203,36 @@ async function setupTesting() {
     findNext: jest.fn(),
     completeCourse: jest.fn(),
   };
+  const MockCourseHistoryService = {
+    findCompletionCount: jest.fn().mockResolvedValue(0),
+    upsert: jest.fn(),
+  };
+  const MockUserCourseProgressService = {
+    findStatement: jest.fn().mockResolvedValue(0),
+  };
+  const MockUserLearningActivityService = {
+    upsertActivity: jest.fn(),
+  };
+  const MockUserLearnRecordService = {
+    increment: jest.fn(),
+  };
+  testMocks = {
+    courseHistoryService: MockCourseHistoryService,
+    userCourseProgressService: MockUserCourseProgressService,
+    userLearningActivityService: MockUserLearningActivityService,
+    userLearnRecordService: MockUserLearnRecordService,
+  };
 
   const moduleRef = await Test.createTestingModule({
     imports: testImportModules,
-    providers: [CoursePackService, { provide: CourseService, useValue: MockCourseService }],
+    providers: [
+      CoursePackService,
+      { provide: CourseService, useValue: MockCourseService },
+      { provide: CourseHistoryService, useValue: MockCourseHistoryService },
+      { provide: UserCourseProgressService, useValue: MockUserCourseProgressService },
+      { provide: UserLearningActivityService, useValue: MockUserLearningActivityService },
+      { provide: UserLearnRecordService, useValue: MockUserLearnRecordService },
+    ],
   }).compile();
 
   const courseService = moduleRef.get<CourseService>(CourseService);

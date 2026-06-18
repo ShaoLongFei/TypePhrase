@@ -1,16 +1,14 @@
-import type { Request } from "express";
+import { Body, Controller, Get, Param, Post, UseGuards } from "@nestjs/common";
 
-import { Controller, Get, Param, Post, Req } from "@nestjs/common";
-
-import { AuthService } from "../auth/auth.service";
+import { AuthGuard } from "../guards/auth.guard";
+import { User, UserEntity } from "../user/user.decorators";
 import { CoursePackService } from "./course-pack.service";
+import { CompleteCourseDto } from "./dto/complete-course.dto";
 
 @Controller("course-pack")
+@UseGuards(AuthGuard)
 export class CoursePackController {
-  constructor(
-    private readonly coursePackService: CoursePackService,
-    private readonly authService: AuthService,
-  ) {}
+  constructor(private readonly coursePackService: CoursePackService) {}
 
   @Get()
   async findAll() {
@@ -26,10 +24,9 @@ export class CoursePackController {
   async findCourse(
     @Param("coursePackId") coursePackId: string,
     @Param("courseId") courseId: string,
-    @Req() request: Request,
+    @User() user: UserEntity,
   ) {
-    const userId = await this.authService.findUserIdByRequest(request);
-    return this.coursePackService.findCourse(coursePackId, courseId, userId);
+    return this.coursePackService.findCourse(coursePackId, courseId, user.userId);
   }
 
   @Get(":coursePackId/courses/:courseId/next")
@@ -38,7 +35,16 @@ export class CoursePackController {
   }
 
   @Post(":coursePackId/courses/:courseId/complete")
-  CompleteCourse(@Param("coursePackId") coursePackId: string, @Param("courseId") courseId: string) {
-    return this.coursePackService.completeCourse(coursePackId, courseId);
+  CompleteCourse(
+    @Param("coursePackId") coursePackId: string,
+    @Param("courseId") courseId: string,
+    @User() user: UserEntity,
+    @Body() dto: CompleteCourseDto = {},
+  ) {
+    return this.coursePackService.completeCourse(coursePackId, courseId, user.userId, {
+      duration: dto.duration,
+      count: dto.count,
+      completedAt: dto.completedAt ? new Date(dto.completedAt) : new Date(),
+    });
   }
 }

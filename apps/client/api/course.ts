@@ -30,12 +30,22 @@ export async function fetchCourse(coursePackId: string, courseId: string) {
 }
 
 type CompleteCourseResponse = { nextCourse: CourseApiResponse | undefined };
-export async function fetchCompleteCourse(coursePackId: string, courseId: string) {
+export interface CompleteCoursePayload {
+  duration?: number;
+  count?: number;
+  completedAt?: string;
+}
+
+export async function fetchCompleteCourse(
+  coursePackId: string,
+  courseId: string,
+  payload: CompleteCoursePayload = {},
+) {
   const http = getHttp();
   return transformerFetchCompleteCourse(
     await http<CompleteCourseResponse>(
       `/course-pack/${coursePackId}/courses/${courseId}/complete`,
-      { method: "post" },
+      { method: "post", body: payload },
     ),
   );
 }

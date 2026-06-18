@@ -4,6 +4,7 @@ import { computed, ref, watchEffect } from "vue";
 import type { Course, Statement } from "~/types";
 import { fetchCompleteCourse, fetchCourse } from "~/api/course";
 import { fetchAddMasteredElement } from "~/api/mastered-elements";
+import { fetchUpsertUserCourseProgress } from "~/api/user-course-progress";
 import { useActiveCourseMap } from "~/composables/courses/activeCourse";
 import { useStatement } from "./statement";
 
@@ -49,6 +50,7 @@ export const useCourseStore = defineStore("course", () => {
 
   function toSpecificStatement(index: number) {
     statementIndex.value = index;
+    saveProgress();
   }
 
   function findNextUnmasteredIndex(currentIndex: number, direction: 1 | -1) {
@@ -70,6 +72,7 @@ export const useCourseStore = defineStore("course", () => {
     const prevIndex = findNextUnmasteredIndex(statementIndex.value, -1);
     if (prevIndex !== -1) {
       statementIndex.value = prevIndex;
+      saveProgress();
     }
   }
 
@@ -77,6 +80,7 @@ export const useCourseStore = defineStore("course", () => {
     const nextIndex = findNextUnmasteredIndex(statementIndex.value, 1);
     if (nextIndex !== -1) {
       statementIndex.value = nextIndex;
+      saveProgress();
     }
   }
 
@@ -107,11 +111,15 @@ export const useCourseStore = defineStore("course", () => {
   function doAgain() {
     resetStatementIndex();
     updateActiveCourseMap(currentCourse.value?.coursePackId!, currentCourse.value?.id!);
+    saveProgress();
   }
 
-  async function completeCourse() {
+  async function completeCourse(stats: { duration?: number; count?: number } = {}) {
     const coursePackId = currentCourse.value?.coursePackId!;
-    const res = await fetchCompleteCourse(coursePackId, currentCourse.value?.id!);
+    const res = await fetchCompleteCourse(coursePackId, currentCourse.value?.id!, {
+      ...stats,
+      completedAt: new Date().toISOString(),
+    });
     return res;
   }
 
@@ -125,12 +133,14 @@ export const useCourseStore = defineStore("course", () => {
     const nextIndex = findNextUnmasteredIndex(currentIndex, 1);
     if (nextIndex !== -1) {
       statementIndex.value = nextIndex;
+      saveProgress();
       return;
     }
 
     const previousIndex = findNextUnmasteredIndex(currentIndex, -1);
     if (previousIndex !== -1) {
       statementIndex.value = previousIndex;
+      saveProgress();
     }
   }
 
@@ -138,9 +148,21 @@ export const useCourseStore = defineStore("course", () => {
     let course = await fetchCourse(coursePackId, courseId);
 
     currentCourse.value = course;
-    if (statementIndex.value === 0) {
+    if (course.statementIndex > 0 && course.statementIndex < course.statements.length) {
+      statementIndex.value = course.statementIndex;
+    } else {
       resetStatementIndex();
     }
+  }
+
+  function saveProgress() {
+    if (!currentCourse.value) return;
+
+    void fetchUpsertUserCourseProgress({
+      coursePackId: currentCourse.value.coursePackId,
+      courseId: currentCourse.value.id,
+      statementIndex: statementIndex.value,
+    }).catch(() => undefined);
   }
 
   return {
