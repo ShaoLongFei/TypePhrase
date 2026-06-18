@@ -4,7 +4,7 @@ import { and, desc, eq } from "drizzle-orm";
 import { masteredElements as masteredElementsSchema } from "@earthworm/schema";
 import { DB, DbType } from "../global/providers/db.provider";
 
-interface ElementContent {
+export interface ElementContent {
   english: string;
 }
 
@@ -25,12 +25,12 @@ export class MasteredElementService {
       .insert(masteredElementsSchema)
       .values({
         userId,
-        content: JSON.stringify(content),
+        content,
         masteredAt: new Date(),
       })
       .returning();
 
-    entity.content = JSON.parse(entity.content as string);
+    entity.content = this.parseContent(entity.content);
     return entity;
   }
 
@@ -43,7 +43,7 @@ export class MasteredElementService {
 
     return result.map((item) => ({
       ...item,
-      content: JSON.parse(item.content as string),
+      content: this.parseContent(item.content),
     }));
   }
 
@@ -68,14 +68,18 @@ export class MasteredElementService {
     const result = await this.db
       .select()
       .from(masteredElementsSchema)
-      .where(
-        and(
-          eq(masteredElementsSchema.userId, userId),
-          eq(masteredElementsSchema.content, JSON.stringify(content)),
-        ),
-      )
-      .limit(1);
+      .where(eq(masteredElementsSchema.userId, userId));
 
-    return result.length > 0;
+    return result.some((item) => this.parseContent(item.content)?.english === content.english);
+  }
+
+  private parseContent(content: unknown): ElementContent | null {
+    if (!content) return null;
+    if (typeof content !== "string") return content as ElementContent;
+    const parsed = JSON.parse(content);
+    if (typeof parsed === "string") {
+      return JSON.parse(parsed);
+    }
+    return parsed;
   }
 }

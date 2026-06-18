@@ -56,7 +56,11 @@ export class CourseService {
   private parseMasteredContent(content: unknown): { english?: string } | null {
     if (!content) return null;
     if (typeof content === "string") {
-      return JSON.parse(content);
+      const parsed = JSON.parse(content);
+      if (typeof parsed === "string") {
+        return JSON.parse(parsed);
+      }
+      return parsed;
     }
     return content as { english?: string };
   }
