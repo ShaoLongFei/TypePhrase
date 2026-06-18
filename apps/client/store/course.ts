@@ -3,6 +3,7 @@ import { computed, ref, watchEffect } from "vue";
 
 import type { Course, Statement } from "~/types";
 import { fetchCompleteCourse, fetchCourse } from "~/api/course";
+import { fetchAddMasteredElement } from "~/api/mastered-elements";
 import { useActiveCourseMap } from "~/composables/courses/activeCourse";
 import { useStatement } from "./statement";
 
@@ -114,6 +115,25 @@ export const useCourseStore = defineStore("course", () => {
     return res;
   }
 
+  async function markCurrentStatementMastered() {
+    if (!currentCourse.value || !currentStatement.value) return;
+
+    const currentIndex = statementIndex.value;
+    await fetchAddMasteredElement({ english: currentStatement.value.english });
+    currentCourse.value.statements[currentIndex].isMastered = true;
+
+    const nextIndex = findNextUnmasteredIndex(currentIndex, 1);
+    if (nextIndex !== -1) {
+      statementIndex.value = nextIndex;
+      return;
+    }
+
+    const previousIndex = findNextUnmasteredIndex(currentIndex, -1);
+    if (previousIndex !== -1) {
+      statementIndex.value = previousIndex;
+    }
+  }
+
   async function setup(coursePackId: string, courseId: string) {
     let course = await fetchCourse(coursePackId, courseId);
 
@@ -135,6 +155,7 @@ export const useCourseStore = defineStore("course", () => {
     doAgain,
     isAllDone,
     completeCourse,
+    markCurrentStatementMastered,
     toSpecificStatement,
     toPreviousStatement,
     toNextStatement,

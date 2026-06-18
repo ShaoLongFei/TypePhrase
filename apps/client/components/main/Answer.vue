@@ -34,13 +34,20 @@
         >
           下一题
         </button>
+        <button
+          class="btn btn-primary btn-sm ml-6"
+          :disabled="isMarkingMastered"
+          @click="handleMarkMastered"
+        >
+          已掌握
+        </button>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted } from "vue";
+import { computed, onMounted, onUnmounted, ref } from "vue";
 
 import { useCurrentStatementEnglishSound } from "~/composables/main/englishSound";
 import { usePlayWordSound } from "~/composables/main/englishSound/audio";
@@ -56,6 +63,7 @@ const { handlePlayEnglishSound } = usePlayEnglishSound();
 const { showQuestion } = useGameMode();
 const { isAutoPlaySound } = useAutoPronunciation();
 const { goToNextQuestion } = useAnswer();
+const isMarkingMastered = ref(false);
 
 const words = computed(() => courseStore.currentStatement?.english.split(" "));
 
@@ -93,5 +101,15 @@ function registerShortcutKeyForNextQuestion() {
     cancelShortcut(" ", handleKeydown);
     cancelShortcut("enter", handleKeydown);
   });
+}
+
+async function handleMarkMastered() {
+  isMarkingMastered.value = true;
+  try {
+    await courseStore.markCurrentStatementMastered();
+    showQuestion();
+  } finally {
+    isMarkingMastered.value = false;
+  }
 }
 </script>

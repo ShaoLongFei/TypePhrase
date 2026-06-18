@@ -78,6 +78,13 @@
       "when": 1781690401301,
       "tag": "0010_worthless_northstar",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1781773000000,
+      "tag": "0011_minimal_user_sessions",
+      "breakpoints": true
     }
   ]
 }

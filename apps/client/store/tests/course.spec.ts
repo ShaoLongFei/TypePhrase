@@ -3,10 +3,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ref } from "vue";
 
 import { fetchCompleteCourse, fetchCourse } from "~/api/course";
+import { fetchAddMasteredElement } from "~/api/mastered-elements";
 import { useActiveCourseMap } from "~/composables/courses/activeCourse";
 import { useCourseStore } from "../course";
 
 vi.mock("~/api/course");
+vi.mock("~/api/mastered-elements");
 vi.mock("~/composables/courses/activeCourse");
 
 vi.mock("../statement.ts", () => {
@@ -60,12 +62,19 @@ const mockCourse = {
   video: "https://example.com/test-video.mp4",
 };
 
+function cloneCourse(course = mockCourse) {
+  return {
+    ...course,
+    statements: course.statements.map((statement) => ({ ...statement })),
+  };
+}
+
 describe("CourseStore", () => {
   let courseStore: ReturnType<typeof useCourseStore>;
 
   beforeEach(async () => {
     setActivePinia(createPinia());
-    vi.mocked(fetchCourse).mockResolvedValue(mockCourse);
+    vi.mocked(fetchCourse).mockResolvedValue(cloneCourse());
     vi.mocked(useActiveCourseMap).mockReturnValue({
       updateActiveCourseMap: vi.fn(),
     } as any);
@@ -125,11 +134,26 @@ describe("CourseStore", () => {
     it("should correctly identify when all statements are mastered", async () => {
       expect(courseStore.isAllMastered()).toBe(false);
       vi.mocked(fetchCourse).mockResolvedValue({
-        ...mockCourse,
+        ...cloneCourse(),
         statements: mockCourse.statements.map((statement) => ({ ...statement, isMastered: true })),
       });
       await courseStore.setup("pack1", "2");
       expect(courseStore.isAllMastered()).toBe(true);
+    });
+
+    it("should mark the current statement as mastered and move to the next unmastered statement", async () => {
+      vi.mocked(fetchAddMasteredElement).mockResolvedValue({
+        id: "mastered-1",
+        userId: "user-1",
+        content: { english: "Hello" },
+        masteredAt: new Date(),
+      } as any);
+
+      await courseStore.markCurrentStatementMastered();
+
+      expect(fetchAddMasteredElement).toHaveBeenCalledWith({ english: "Hello" });
+      expect(courseStore.currentCourse?.statements[0].isMastered).toBe(true);
+      expect(courseStore.statementIndex).toBe(1);
     });
   });
 
@@ -166,7 +190,7 @@ describe("CourseStore", () => {
 
     it("should handle visibleStatementIndex when all statements are mastered", async () => {
       vi.mocked(fetchCourse).mockResolvedValue({
-        ...mockCourse,
+        ...cloneCourse(),
         statements: mockCourse.statements.map((statement) => ({ ...statement, isMastered: true })),
       });
       await courseStore.setup("pack1", "2");
@@ -184,9 +208,11 @@ describe("CourseStore", () => {
     });
 
     it("should complete the course and fetch the next course", async () => {
-      vi.mocked(fetchCompleteCourse).mockResolvedValue({ nextCourse: { ...mockCourse, id: "2" } });
+      vi.mocked(fetchCompleteCourse).mockResolvedValue({
+        nextCourse: { ...cloneCourse(), id: "2" },
+      });
       const result = await courseStore.completeCourse();
-      expect(result).toEqual({ nextCourse: { ...mockCourse, id: "2" } });
+      expect(result).toEqual({ nextCourse: { ...cloneCourse(), id: "2" } });
     });
   });
 
@@ -206,7 +232,7 @@ describe("CourseStore", () => {
 
   describe("Edge cases", () => {
     it("should handle an empty course", async () => {
-      vi.mocked(fetchCourse).mockResolvedValue({ ...mockCourse, statements: [] });
+      vi.mocked(fetchCourse).mockResolvedValue({ ...cloneCourse(), statements: [] });
       await courseStore.setup("pack1", "1");
       expect(courseStore.visibleStatementsCount).toBe(0);
       expect(courseStore.isAllDone()).toBe(true);
@@ -215,8 +241,8 @@ describe("CourseStore", () => {
 
     it("should handle a course with only one statement", async () => {
       vi.mocked(fetchCourse).mockResolvedValue({
-        ...mockCourse,
-        statements: [mockCourse.statements[0]],
+        ...cloneCourse(),
+        statements: [{ ...mockCourse.statements[0] }],
       });
       await courseStore.setup("pack1", "1");
       expect(courseStore.totalQuestionsCount).toBe(1);

@@ -60,8 +60,8 @@ export class CoursePackService {
     return coursePackWithCourses;
   }
 
-  async findCourse(coursePackId: string, courseId: string) {
-    return await this.courseService.find(coursePackId, courseId);
+  async findCourse(coursePackId: string, courseId: string, userId?: string | null) {
+    return await this.courseService.find(coursePackId, courseId, userId);
   }
 
   async findNextCourse(coursePackId: string, courseId: string) {

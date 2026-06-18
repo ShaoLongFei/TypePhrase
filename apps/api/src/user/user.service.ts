@@ -3,8 +3,6 @@ import { eq } from "drizzle-orm";
 
 import { course, coursePack, users } from "@earthworm/schema";
 import { DB, DbType } from "../global/providers/db.provider";
-import { MembershipService } from "../membership/membership.service";
-import { type MembershipDetails } from "../membership/types/membership.types";
 import { UserCourseProgressService } from "../user-course-progress/user-course-progress.service";
 import { UserEntity } from "../user/user.decorators";
 import { UpdateUserDto } from "./model/user.dto";
@@ -14,18 +12,13 @@ export class UserService {
   constructor(
     @Inject(DB) private db: DbType,
     private readonly userCourseProgressService: UserCourseProgressService,
-    private readonly membershipService: MembershipService,
   ) {}
 
   async findUser(uId: string) {
     try {
       const userInfo = await this.findLocalUser(uId);
       if (!userInfo) return undefined;
-      const membershipInfo = await this.getMembershipInfo(uId);
-      return {
-        ...userInfo,
-        membership: membershipInfo,
-      };
+      return userInfo;
     } catch (error) {
       console.error("Error fetching user info:", error);
       return undefined;
@@ -36,23 +29,11 @@ export class UserService {
     try {
       const userInfo = await this.findLocalUser(uId);
       if (!userInfo) return undefined;
-      return {
-        ...userInfo,
-        membership: await this.getMembershipInfo(uId),
-      };
+      return userInfo;
     } catch (error) {
       console.error("Error fetching current user info:", error);
       return undefined;
     }
-  }
-
-  private async getMembershipInfo(uId: string) {
-    const isMember = await this.membershipService.isMember(uId);
-    let details: MembershipDetails = null;
-    if (isMember) {
-      details = await this.membershipService.getMembershipDetails(uId);
-    }
-    return { isMember, details };
   }
 
   async updateUser(user: UserEntity, dto: UpdateUserDto) {

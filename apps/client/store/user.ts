@@ -2,8 +2,7 @@ import { defineStore } from "pinia";
 import { ref } from "vue";
 
 import type { User } from "~/types";
-import { fetchSetupNewUser } from "~/api/user";
-import { MembershipType } from "~/types";
+import { fetchCurrentUser, fetchLogin, fetchLogout, fetchRegister } from "~/api/auth";
 
 export const useUserStore = defineStore("user", () => {
   const user = ref<User>();
@@ -12,31 +11,36 @@ export const useUserStore = defineStore("user", () => {
     user.value = val;
   }
 
-  function isNewUser() {
-    return !user.value?.username || !user.value?.avatar;
+  async function register(data: { username: string; phone: string; password: string }) {
+    user.value = await fetchRegister(data);
+    return user.value;
   }
 
-  async function setupNewUser(info: { username: string; avatar: string }) {
-    if (!user.value) return;
-
-    const res = await fetchSetupNewUser({
-      username: info.username,
-      avatar: info.avatar,
-    });
-
-    user.value.username = res.username;
-    user.value.avatar = res.avatar;
+  async function login(data: { phone: string; password: string }) {
+    user.value = await fetchLogin(data);
+    return user.value;
   }
 
-  function isFounderMembership() {
-    return user.value?.membership.details?.type === MembershipType.FOUNDER;
+  async function loadCurrentUser() {
+    try {
+      user.value = await fetchCurrentUser();
+    } catch {
+      user.value = undefined;
+    }
+    return user.value;
+  }
+
+  async function logout() {
+    await fetchLogout();
+    user.value = undefined;
   }
 
   return {
     user,
-    isNewUser,
     initUser,
-    setupNewUser,
-    isFounderMembership,
+    register,
+    login,
+    loadCurrentUser,
+    logout,
   };
 });
