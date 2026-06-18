@@ -26,12 +26,18 @@ export class MasteredElementService {
       .insert(masteredElementsSchema)
       .values({
         userId,
-        content: sql`${JSON.stringify(normalizedContent)}::jsonb`,
+        content: normalizedContent,
         masteredAt: new Date(),
       })
       .returning();
 
-    entity.content = this.parseContent(entity.content);
+    await this.db.execute(sql`
+      UPDATE ${masteredElementsSchema}
+      SET ${masteredElementsSchema.content} = ${JSON.stringify(normalizedContent)}::jsonb
+      WHERE ${masteredElementsSchema.id} = ${entity.id}
+    `);
+
+    entity.content = normalizedContent;
     return entity;
   }
 
