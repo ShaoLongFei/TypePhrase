@@ -10,11 +10,12 @@ export const courseHistory = pgTable(
     userId: text("user_id").notNull(),
     courseId: text("course_id").notNull(),
     coursePackId: text("course_pack_id").notNull(),
+    difficulty: text("difficulty").notNull().default("normal"),
     completionCount: integer("completion_count").notNull(),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").$onUpdateFn(() => new Date()),
   },
   (t) => ({
-    unq: unique().on(t.userId, t.courseId, t.coursePackId),
+    unq: unique().on(t.userId, t.courseId, t.coursePackId, t.difficulty),
   }),
 );

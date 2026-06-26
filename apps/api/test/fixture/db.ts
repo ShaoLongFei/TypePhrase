@@ -1,18 +1,16 @@
 import { DbType } from "src/global/providers/db.provider";
 
-import { course, coursePack, statement, userCourseProgress } from "@earthworm/schema";
+import { course, coursePack, sentence, statement, userCourseProgress } from "@earthworm/schema";
 import { getTestUserId } from "../../test/fixture/user";
 
 type CoursePackInsert = typeof coursePack.$inferInsert;
 
 export async function insertCoursePack(db: DbType, values?: Partial<CoursePackInsert>) {
   const defaultCoursePack = {
-    order: 1,
     title: "课程包",
     description: "这是一个课程包",
-    isFree: true,
-    creatorId: "test",
-    shareLevel: "public",
+    cover: "",
+    rawJson: {},
   } satisfies CoursePackInsert;
 
   const [entity] = await db
@@ -33,9 +31,11 @@ export async function insertCourse(
   values?: Partial<CourseInsert>,
 ) {
   const defaultCourse = {
-    order: 1,
+    displayOrder: 1,
     title: "第一课",
     coursePackId,
+    courseType: "normal",
+    rawJson: {},
   } satisfies CourseInsert;
 
   const [entity] = await db
@@ -57,11 +57,13 @@ export async function insertStatement(
   values?: Partial<StatementInsert>,
 ) {
   const defaultStatement = {
-    order,
+    displayOrder: order,
     courseId,
     chinese: "你好",
     english: "hello",
     soundmark: "nihao",
+    statementType: "word",
+    rawJson: {},
   } satisfies StatementInsert;
 
   const [entity] = await db
@@ -75,11 +77,39 @@ export async function insertStatement(
   return entity;
 }
 
+type SentenceInsert = typeof sentence.$inferInsert;
+export async function insertSentence(
+  db: DbType,
+  courseId: string,
+  sortOrder: number,
+  values?: Partial<SentenceInsert>,
+) {
+  const defaultSentence = {
+    courseId,
+    content: "hello",
+    english: "hello",
+    chinese: "你好",
+    sortOrder,
+    rawJson: {},
+  } satisfies SentenceInsert;
+
+  const [entity] = await db
+    .insert(sentence)
+    .values({
+      ...defaultSentence,
+      ...values,
+    })
+    .returning();
+
+  return entity;
+}
+
 export async function insertUserCourseProgress(
   db,
   coursePackId: string,
   courseId: string,
-  statementIndex: number,
+  practiceIndex: number,
+  difficulty = "normal",
 ) {
   const [entity] = await db
     .insert(userCourseProgress)
@@ -87,7 +117,8 @@ export async function insertUserCourseProgress(
       userId: getTestUserId(),
       coursePackId,
       courseId,
-      statementIndex,
+      difficulty,
+      practiceIndex,
     })
     .returning();
 

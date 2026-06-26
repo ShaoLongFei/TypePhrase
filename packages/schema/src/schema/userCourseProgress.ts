@@ -10,15 +10,12 @@ export const userCourseProgress = pgTable(
     userId: text("user_id").notNull(),
     coursePackId: text("course_pack_id").notNull(),
     courseId: text("course_id").notNull(),
-
-    /**
-     * from Statement's order
-     */
-    statementIndex: integer("statement_index").notNull(),
+    difficulty: text("difficulty").notNull().default("normal"),
+    practiceIndex: integer("practice_index").notNull(),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").$onUpdateFn(() => new Date()),
   },
   (t) => ({
-    unq: unique().on(t.userId, t.coursePackId),
+    unq: unique().on(t.userId, t.coursePackId, t.difficulty),
   }),
 );

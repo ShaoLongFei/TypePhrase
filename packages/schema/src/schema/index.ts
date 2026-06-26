@@ -1,5 +1,6 @@
 export * from "./course";
 export * from "./courseHistory";
+export * from "./sentence";
 export * from "./statement";
 export * from "./userLearnRecord";
 export * from "./userCourseProgress";
