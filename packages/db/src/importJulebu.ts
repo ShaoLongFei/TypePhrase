@@ -305,7 +305,7 @@ function mapStatementRow(row: StatementRow) {
   return {
     id: row.id,
     course_id: row.course_id,
-    sentence_id: row.sentence_id,
+    sentence_id: normalizeNullableText(row.sentence_id),
     chinese: row.chinese ?? "",
     english: row.english ?? "",
     soundmark: row.soundmark ?? "",
@@ -313,6 +313,14 @@ function mapStatementRow(row: StatementRow) {
     display_order: row.display_order ?? 0,
     raw_json: parseRawJson(row.raw_json, "statements", row.id),
   };
+}
+
+function normalizeNullableText(value: string | null) {
+  if (!value?.trim()) {
+    return null;
+  }
+
+  return value;
 }
 
 async function insertCoursePacks(sql: PgSql, rows: ReturnType<typeof mapCoursePackRow>[]) {

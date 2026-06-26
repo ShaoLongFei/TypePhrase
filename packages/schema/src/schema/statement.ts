@@ -10,7 +10,7 @@ export const statement = pgTable("statements", {
     .primaryKey()
     .$defaultFn(() => createId()),
   displayOrder: integer("display_order").notNull(),
-  sentenceId: text("sentence_id").references(() => sentence.id),
+  sentenceId: text("sentence_id"),
   chinese: text("chinese").notNull().default(""),
   english: text("english").notNull(),
   soundmark: text("soundmark").notNull().default(""),
