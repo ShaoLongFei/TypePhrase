@@ -5,6 +5,7 @@ import { Inject, Injectable } from "@nestjs/common";
 import { and, eq, sql } from "drizzle-orm";
 
 import { courseHistory } from "@earthworm/schema";
+import { DEFAULT_PRACTICE_DIFFICULTY, PracticeDifficulty } from "../common/practice";
 import { DB, DbType } from "../global/providers/db.provider";
 
 @Injectable()
@@ -29,29 +30,46 @@ export class CourseHistoryService {
     });
   }
 
-  async findCompletionCount(userId: string, coursePackId: string, courseId: string) {
+  async findCompletionCount(
+    userId: string,
+    coursePackId: string,
+    courseId: string,
+    difficulty: PracticeDifficulty = DEFAULT_PRACTICE_DIFFICULTY,
+  ) {
     const record = await this.db.query.courseHistory.findFirst({
       where: and(
         eq(courseHistory.userId, userId),
         eq(courseHistory.coursePackId, coursePackId),
         eq(courseHistory.courseId, courseId),
+        eq(courseHistory.difficulty, difficulty),
       ),
     });
 
     return record ? record.completionCount : 0;
   }
 
-  async upsert(userId: string, coursePackId: string, courseId: string) {
+  async upsert(
+    userId: string,
+    coursePackId: string,
+    courseId: string,
+    difficulty: PracticeDifficulty = DEFAULT_PRACTICE_DIFFICULTY,
+  ) {
     await this.db
       .insert(courseHistory)
       .values({
         coursePackId,
         courseId,
         userId,
+        difficulty,
         completionCount: 1,
       })
       .onConflictDoUpdate({
-        target: [courseHistory.userId, courseHistory.courseId, courseHistory.coursePackId],
+        target: [
+          courseHistory.userId,
+          courseHistory.courseId,
+          courseHistory.coursePackId,
+          courseHistory.difficulty,
+        ],
         set: { completionCount: sql`course_history.completion_count + 1` },
       });
   }

@@ -28,42 +28,66 @@ describe("user-progress service", () => {
     await cleanDB(db);
   });
 
-  it("should update an existing progress entry", async () => {
+  it("should update an existing progress entry for the same difficulty", async () => {
     const userId = "cxr";
     const coursePackId = createId();
     const courseId = createId();
-    const statementIndex = 1;
-    const newStatementIndex = 2;
-    await userCourseProgressService.upsert(userId, coursePackId, courseId, statementIndex);
+    const practiceIndex = 1;
+    const newPracticeIndex = 2;
+    await userCourseProgressService.upsert(userId, coursePackId, courseId, "normal", practiceIndex);
 
-    await userCourseProgressService.upsert(userId, coursePackId, courseId, newStatementIndex);
+    await userCourseProgressService.upsert(
+      userId,
+      coursePackId,
+      courseId,
+      "normal",
+      newPracticeIndex,
+    );
 
-    const result = await userCourseProgressService.findStatement(userId, coursePackId, courseId);
+    const result = await userCourseProgressService.findPracticeIndex(
+      userId,
+      coursePackId,
+      courseId,
+      "normal",
+    );
 
-    expect(result).toBe(newStatementIndex);
+    expect(result).toBe(newPracticeIndex);
   });
 
-  it("should return the statementIndex when there is progress for the specific course pack and course", async () => {
+  it("should keep normal and hard difficulty progress separate", async () => {
     const userId = "cxr";
     const coursePackId = createId();
     const courseId = createId();
-    const statementIndex = 1;
-    await userCourseProgressService.upsert(userId, coursePackId, courseId, statementIndex);
+    await userCourseProgressService.upsert(userId, coursePackId, courseId, "normal", 1);
+    await userCourseProgressService.upsert(userId, coursePackId, courseId, "hard", 4);
 
-    const result = await userCourseProgressService.findStatement(userId, coursePackId, courseId);
+    const normalResult = await userCourseProgressService.findPracticeIndex(
+      userId,
+      coursePackId,
+      courseId,
+      "normal",
+    );
+    const hardResult = await userCourseProgressService.findPracticeIndex(
+      userId,
+      coursePackId,
+      courseId,
+      "hard",
+    );
 
-    expect(result).toBe(statementIndex);
+    expect(normalResult).toBe(1);
+    expect(hardResult).toBe(4);
   });
 
   it("should return 0 when there is no progress for the specific course pack and course", async () => {
     // not add any user course progress
-    const statementIndex = await userCourseProgressService.findStatement(
+    const practiceIndex = await userCourseProgressService.findPracticeIndex(
       "cxr",
       createId(),
       createId(),
+      "normal",
     );
 
-    expect(statementIndex).toBe(0);
+    expect(practiceIndex).toBe(0);
   });
 
   describe("getUserRecentCoursePacks", () => {
@@ -73,18 +97,14 @@ describe("user-progress service", () => {
 
     beforeEach(async () => {
       coursePackEntityFirst = await insertCoursePack(db, {
-        order: 1,
         title: "零基础",
         description: "这是零基础学英语",
-        isFree: true,
         cover: "",
       });
 
       coursePackEntitySecond = await insertCoursePack(db, {
-        order: 2,
         title: "300个基础句子",
         description: "快乐学英语",
-        isFree: true,
         cover: "",
       });
     });
@@ -94,8 +114,20 @@ describe("user-progress service", () => {
 
       const courseId1 = createId();
       const courseId2 = createId();
-      await userCourseProgressService.upsert(userId, coursePackEntityFirst.id, courseId1, 1);
-      await userCourseProgressService.upsert(userId, coursePackEntityFirst.id, courseId2, 1);
+      await userCourseProgressService.upsert(
+        userId,
+        coursePackEntityFirst.id,
+        courseId1,
+        "normal",
+        1,
+      );
+      await userCourseProgressService.upsert(
+        userId,
+        coursePackEntityFirst.id,
+        courseId2,
+        "normal",
+        1,
+      );
 
       const recentCoursePacks = await userCourseProgressService.getUserRecentCoursePacks(
         userId,
@@ -118,8 +150,20 @@ describe("user-progress service", () => {
     it("should return the recent course packs for a given user up to the specified limit", async () => {
       const limit = 1;
 
-      await userCourseProgressService.upsert(userId, coursePackEntityFirst.id, createId(), 1);
-      await userCourseProgressService.upsert(userId, coursePackEntitySecond.id, createId(), 1);
+      await userCourseProgressService.upsert(
+        userId,
+        coursePackEntityFirst.id,
+        createId(),
+        "normal",
+        1,
+      );
+      await userCourseProgressService.upsert(
+        userId,
+        coursePackEntitySecond.id,
+        createId(),
+        "normal",
+        1,
+      );
 
       const recentCoursePacks = await userCourseProgressService.getUserRecentCoursePacks(
         userId,

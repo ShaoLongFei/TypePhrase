@@ -28,7 +28,8 @@ export class UserProgressController {
       user.userId,
       dto.coursePackId,
       dto.courseId,
-      dto.statementIndex,
+      dto.difficulty,
+      dto.practiceIndex,
     );
 
     return result;

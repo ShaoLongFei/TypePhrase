@@ -37,13 +37,13 @@ describe("course service", () => {
     it("should return a course with the given coursePackId and courseId", async () => {
       const { coursePackId, courseEntityFirst } = await setupDBData(db);
 
-      const result = await courseService.find(coursePackId, courseEntityFirst.id);
+      const result = await courseService.find(coursePackId, courseEntityFirst.id, null, "normal");
 
       expect(result).toHaveProperty("coursePackId");
       expect(result).toHaveProperty("id");
-      expect(result).toHaveProperty("order");
+      expect(result).toHaveProperty("displayOrder");
       expect(result).toHaveProperty("title");
-      expect(result).toHaveProperty("statements");
+      expect(result).toHaveProperty("practiceItems");
     });
 
     it("should throw NotFoundException if the course does not exist", async () => {
@@ -109,11 +109,11 @@ async function setupDBData(db: DbType) {
   const coursePackEntity = await insertCoursePack(db);
   const courseEntityFirst = await insertCourse(db, coursePackEntity.id, {
     title: "第一课",
-    order: 1,
+    displayOrder: 1,
   });
   const courseEntitySecond = await insertCourse(db, coursePackEntity.id, {
     title: "第二课",
-    order: 2,
+    displayOrder: 2,
   });
   const statementEntityFirst = await insertStatement(db, courseEntityFirst.id, 1);
   const statementEntitySecond = await insertStatement(db, courseEntityFirst.id, 2);

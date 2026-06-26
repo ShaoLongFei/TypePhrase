@@ -16,10 +16,7 @@ export class MasteredElementController {
     @User() user: UserEntity,
     @Body() addMasteredElementDto: AddMasteredElementDto,
   ) {
-    return await this.masteredElementService.addMasteredElement(
-      user.userId,
-      addMasteredElementDto.content,
-    );
+    return await this.masteredElementService.addMasteredElement(user.userId, addMasteredElementDto);
   }
 
   @UseGuards(AuthGuard)

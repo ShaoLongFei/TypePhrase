@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsNotEmpty } from "class-validator";
+import { IsIn, IsNotEmpty } from "class-validator";
 
 export class CreateUserProgressDto {
   @ApiProperty()
@@ -18,5 +18,9 @@ export class UpsertUserProgressDto {
 
   @ApiProperty()
   @IsNotEmpty({ message: "课程进度不能为空" })
-  statementIndex: number;
+  practiceIndex: number;
+
+  @ApiProperty({ enum: ["normal", "hard"] })
+  @IsIn(["normal", "hard"])
+  difficulty: "normal" | "hard";
 }

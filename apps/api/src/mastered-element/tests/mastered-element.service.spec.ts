@@ -32,41 +32,64 @@ describe("MasteredElementService", () => {
   describe("addMasteredElement", () => {
     it("should successfully add a new mastered element", async () => {
       const userId = "testUser";
-      const content = { english: "test" };
+      const content = createMasteredContent("statement", "statement-1", "test");
+
       const result = await masteredElementService.addMasteredElement(userId, content);
+
       expect(result).toBeDefined();
-      expect(result.content).toEqual(content);
+      expect(result).toEqual(expect.objectContaining(content));
     });
 
-    it("should throw BadRequestException when adding an existing element", async () => {
+    it("should throw BadRequestException when adding an existing source element", async () => {
       const userId = "testUser";
-      const content = { english: "test" };
+      const content = createMasteredContent("statement", "statement-1", "test");
+
       await masteredElementService.addMasteredElement(userId, content);
+
       await expect(masteredElementService.addMasteredElement(userId, content)).rejects.toThrow(
         BadRequestException,
       );
     });
 
-    it("should throw BadRequestException when adding element without english property", async () => {
+    it("should allow the same english text from a different source", async () => {
       const userId = "testUser";
-      const content = { someOtherProperty: "test" };
+      await masteredElementService.addMasteredElement(
+        userId,
+        createMasteredContent("statement", "statement-1", "test"),
+      );
+
+      const result = await masteredElementService.addMasteredElement(
+        userId,
+        createMasteredContent("sentence", "sentence-1", "test"),
+      );
+
+      expect(result).toEqual(
+        expect.objectContaining({
+          sourceType: "sentence",
+          sourceId: "sentence-1",
+          english: "test",
+        }),
+      );
+    });
+
+    it("should throw BadRequestException when adding element without source id", async () => {
+      const userId = "testUser";
+      const content = { sourceType: "statement", english: "test", chinese: "" };
+
       await expect(
         masteredElementService.addMasteredElement(userId, content as any),
       ).rejects.toThrow(BadRequestException);
-    });
-
-    it("should correctly handle additional properties in content", async () => {
-      const userId = "testUser";
-      const content = { english: "test", chinese: "测试" };
-      const result = await masteredElementService.addMasteredElement(userId, content);
-      expect(result.content).toEqual(content);
     });
   });
 
   describe("getMasteredElements", () => {
     it("should return all mastered elements for a user", async () => {
       const userId = "testUser";
-      const contents = [{ english: "test1" }, { english: "test2" }, { english: "test3" }];
+      const contents = [
+        createMasteredContent("statement", "statement-1", "test1"),
+        createMasteredContent("statement", "statement-2", "test2"),
+        createMasteredContent("sentence", "sentence-1", "test3"),
+      ];
       for (const content of contents) {
         await masteredElementService.addMasteredElement(userId, content);
       }
@@ -74,17 +97,42 @@ describe("MasteredElementService", () => {
       const result = await masteredElementService.getMasteredElements(userId);
 
       expect(result).toHaveLength(3);
-      expect(result.map((r) => r.content)).toMatchSnapshot();
+      expect(result.map(({ sourceType, sourceId, english }) => ({ sourceType, sourceId, english })))
+        .toMatchInlineSnapshot(`
+        [
+          {
+            "english": "test3",
+            "sourceId": "sentence-1",
+            "sourceType": "sentence",
+          },
+          {
+            "english": "test2",
+            "sourceId": "statement-2",
+            "sourceType": "statement",
+          },
+          {
+            "english": "test1",
+            "sourceId": "statement-1",
+            "sourceType": "statement",
+          },
+        ]
+      `);
     });
 
     it("should return elements in descending order of masteredAt", async () => {
       const userId = "testUser";
-      const contents = [{ english: "test1" }, { english: "test2" }, { english: "test3" }];
+      const contents = [
+        createMasteredContent("statement", "statement-1", "test1"),
+        createMasteredContent("statement", "statement-2", "test2"),
+        createMasteredContent("sentence", "sentence-1", "test3"),
+      ];
       for (const content of contents) {
         await masteredElementService.addMasteredElement(userId, content);
       }
+
       const result = await masteredElementService.getMasteredElements(userId);
-      expect(result.map((r) => r.content)).toMatchSnapshot();
+
+      expect(result.map((r) => r.sourceId)).toEqual(["sentence-1", "statement-2", "statement-1"]);
     });
 
     it("should return an empty array when user has no mastered elements", async () => {
@@ -96,9 +144,11 @@ describe("MasteredElementService", () => {
   describe("removeMasteredElement", () => {
     it("should successfully remove an existing mastered element", async () => {
       const userId = "testUser";
-      const content = { english: "test" };
+      const content = createMasteredContent("statement", "statement-1", "test");
       const addedElement = await masteredElementService.addMasteredElement(userId, content);
+
       await masteredElementService.removeMasteredElement(userId, addedElement.id);
+
       const elements = await masteredElementService.getMasteredElements(userId);
       expect(elements).toHaveLength(0);
     });
@@ -122,3 +172,16 @@ describe("MasteredElementService", () => {
     });
   });
 });
+
+function createMasteredContent(
+  sourceType: "statement" | "sentence",
+  sourceId: string,
+  english: string,
+) {
+  return {
+    sourceType,
+    sourceId,
+    english,
+    chinese: "测试",
+  };
+}

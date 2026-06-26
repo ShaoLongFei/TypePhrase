@@ -1,14 +1,18 @@
-import { Type } from "class-transformer";
-import { IsNotEmpty, IsObject, ValidateNested } from "class-validator";
-
-class ContentDto {
-  @IsNotEmpty()
-  english: string;
-}
+import { IsIn, IsNotEmpty, IsOptional, IsString } from "class-validator";
 
 export class AddMasteredElementDto {
-  @IsObject()
-  @ValidateNested()
-  @Type(() => ContentDto)
-  content: ContentDto;
+  @IsIn(["statement", "sentence"])
+  sourceType: "statement" | "sentence";
+
+  @IsNotEmpty()
+  @IsString()
+  sourceId: string;
+
+  @IsNotEmpty()
+  @IsString()
+  english: string;
+
+  @IsOptional()
+  @IsString()
+  chinese?: string;
 }

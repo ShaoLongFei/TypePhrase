@@ -1,24 +1,33 @@
 import { Inject, Injectable, NotFoundException } from "@nestjs/common";
 import { and, asc, eq } from "drizzle-orm";
 
-import { course, masteredElements, statement } from "@earthworm/schema";
+import { course, masteredElements, sentence, statement } from "@earthworm/schema";
+import { PracticeDifficulty, PracticeSourceType } from "../common/practice";
 import { DB, DbType } from "../global/providers/db.provider";
+
+export interface PracticeItem {
+  id: string;
+  sourceType: PracticeSourceType;
+  order: number;
+  english: string;
+  chinese: string;
+  soundmark: string;
+  itemType: string;
+  isMastered: boolean;
+}
 
 @Injectable()
 export class CourseService {
   constructor(@Inject(DB) private db: DbType) {}
 
-  async find(coursePackId: string, courseId: string, userId?: string | null) {
+  async find(
+    coursePackId: string,
+    courseId: string,
+    userId?: string | null,
+    difficulty: PracticeDifficulty = "normal",
+  ) {
     const courseEntity = await this.db.query.course.findFirst({
       where: and(eq(course.id, courseId), eq(course.coursePackId, coursePackId)),
-      with: {
-        statements: {
-          columns: {
-            id: false,
-          },
-          orderBy: [asc(statement.order)],
-        },
-      },
     });
 
     if (!courseEntity) {
@@ -27,10 +36,16 @@ export class CourseService {
       );
     }
 
+    const practiceItems =
+      difficulty === "hard"
+        ? await this.findSentencePracticeItems(courseId)
+        : await this.findStatementPracticeItems(courseId);
+
     if (!userId) {
       return {
         ...courseEntity,
-        statements: courseEntity.statements.map((item) => ({ ...item, isMastered: false })),
+        difficulty,
+        practiceItems,
       };
     }
 
@@ -38,31 +53,60 @@ export class CourseService {
       .select()
       .from(masteredElements)
       .where(eq(masteredElements.userId, userId));
-    const masteredEnglish = new Set(
-      mastered
-        .map((item) => this.parseMasteredContent(item.content)?.english)
-        .filter((english): english is string => Boolean(english)),
-    );
+    const masteredKeys = new Set(mastered.map((item) => this.getMasteredKey(item)));
 
     return {
       ...courseEntity,
-      statements: courseEntity.statements.map((item) => ({
+      difficulty,
+      practiceItems: practiceItems.map((item) => ({
         ...item,
-        isMastered: masteredEnglish.has(item.english),
+        isMastered: masteredKeys.has(this.getPracticeItemKey(item)),
       })),
     };
   }
 
-  private parseMasteredContent(content: unknown): { english?: string } | null {
-    if (!content) return null;
-    if (typeof content === "string") {
-      const parsed = JSON.parse(content);
-      if (typeof parsed === "string") {
-        return JSON.parse(parsed);
-      }
-      return parsed;
-    }
-    return content as { english?: string };
+  private async findStatementPracticeItems(courseId: string): Promise<PracticeItem[]> {
+    const items = await this.db.query.statement.findMany({
+      where: eq(statement.courseId, courseId),
+      orderBy: [asc(statement.displayOrder)],
+    });
+
+    return items.map((item) => ({
+      id: item.id,
+      sourceType: "statement",
+      order: item.displayOrder,
+      english: item.english,
+      chinese: item.chinese,
+      soundmark: item.soundmark,
+      itemType: item.statementType,
+      isMastered: false,
+    }));
+  }
+
+  private async findSentencePracticeItems(courseId: string): Promise<PracticeItem[]> {
+    const items = await this.db.query.sentence.findMany({
+      where: eq(sentence.courseId, courseId),
+      orderBy: [asc(sentence.sortOrder)],
+    });
+
+    return items.map((item) => ({
+      id: item.id,
+      sourceType: "sentence",
+      order: item.sortOrder,
+      english: item.english || item.content,
+      chinese: item.chinese,
+      soundmark: "",
+      itemType: "sentence",
+      isMastered: false,
+    }));
+  }
+
+  private getPracticeItemKey(item: Pick<PracticeItem, "sourceType" | "id">) {
+    return `${item.sourceType}:${item.id}`;
+  }
+
+  private getMasteredKey(item: { sourceType: string; sourceId: string }) {
+    return `${item.sourceType}:${item.sourceId}`;
   }
 
   async findNext(coursePackId: string, courseId: string) {
@@ -78,12 +122,12 @@ export class CourseService {
   }
 
   private async _findNext(coursePackId: string, courseId: string) {
-    const { order } = await this.db.query.course.findFirst({
+    const { displayOrder } = await this.db.query.course.findFirst({
       where: eq(course.id, courseId),
     });
 
     const nextCourse = await this.db.query.course.findFirst({
-      where: and(eq(course.coursePackId, coursePackId), eq(course.order, order + 1)),
+      where: and(eq(course.coursePackId, coursePackId), eq(course.displayOrder, displayOrder + 1)),
     });
 
     return nextCourse;

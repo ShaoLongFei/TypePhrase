@@ -40,6 +40,7 @@ describe("CoursePackController", () => {
     controller.CompleteCourse(
       "pack-id",
       "course-id",
+      "hard",
       { userId: "user-1" },
       { duration: 30, count: 5, completedAt: "2026-06-18T08:00:00.000Z" },
     );

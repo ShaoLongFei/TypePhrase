@@ -53,7 +53,7 @@ describe("course-pack e2e", () => {
       .expect(200)
       .expect(({ body }) => {
         expect(body).toHaveProperty("courses");
-        expect(body).toHaveProperty("order");
+        expect(body).toHaveProperty("id");
         expect(body).toHaveProperty("title");
       });
   });
@@ -69,8 +69,8 @@ describe("course-pack e2e", () => {
       .expect(200)
       .expect(({ body }) => {
         expect(body).toHaveProperty("coursePackId");
-        expect(body).toHaveProperty("order");
-        expect(body).toHaveProperty("statements");
+        expect(body).toHaveProperty("displayOrder");
+        expect(body).toHaveProperty("practiceItems");
       });
   });
 
@@ -78,11 +78,11 @@ describe("course-pack e2e", () => {
     const { id: coursePackId } = await insertCoursePack(db);
 
     const { id: courseId } = await insertCourse(db, coursePackId, {
-      order: 1,
+      displayOrder: 1,
       title: "第一课",
     });
     const { id: courseIdNext } = await insertCourse(db, coursePackId, {
-      order: 2,
+      displayOrder: 2,
       title: "第二课",
     });
 
@@ -98,11 +98,11 @@ describe("course-pack e2e", () => {
     const { id: coursePackId } = await insertCoursePack(db);
 
     const { id: courseId } = await insertCourse(db, coursePackId, {
-      order: 1,
+      displayOrder: 1,
       title: "第一课",
     });
     const { id: courseIdNext } = await insertCourse(db, coursePackId, {
-      order: 2,
+      displayOrder: 2,
       title: "第二课",
     });
 
@@ -118,7 +118,7 @@ describe("course-pack e2e", () => {
     const { id: coursePackId } = await insertCoursePack(db);
 
     const { id: courseId } = await insertCourse(db, coursePackId, {
-      order: 1,
+      displayOrder: 1,
       title: "第一课",
     });
 

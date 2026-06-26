@@ -1,5 +1,6 @@
-import { Body, Controller, Get, Param, Post, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, Param, Post, Query, UseGuards } from "@nestjs/common";
 
+import { parsePracticeDifficulty } from "../common/practice";
 import { AuthGuard } from "../guards/auth.guard";
 import { User, UserEntity } from "../user/user.decorators";
 import { CoursePackService } from "./course-pack.service";
@@ -24,9 +25,15 @@ export class CoursePackController {
   async findCourse(
     @Param("coursePackId") coursePackId: string,
     @Param("courseId") courseId: string,
+    @Query("difficulty") difficulty: string | undefined,
     @User() user: UserEntity,
   ) {
-    return this.coursePackService.findCourse(coursePackId, courseId, user.userId);
+    return this.coursePackService.findCourse(
+      coursePackId,
+      courseId,
+      user.userId,
+      parsePracticeDifficulty(difficulty),
+    );
   }
 
   @Get(":coursePackId/courses/:courseId/next")
@@ -38,6 +45,7 @@ export class CoursePackController {
   CompleteCourse(
     @Param("coursePackId") coursePackId: string,
     @Param("courseId") courseId: string,
+    @Query("difficulty") difficulty: string | undefined,
     @User() user: UserEntity,
     @Body() dto: CompleteCourseDto = {},
   ) {
@@ -45,6 +53,7 @@ export class CoursePackController {
       duration: dto.duration,
       count: dto.count,
       completedAt: dto.completedAt ? new Date(dto.completedAt) : new Date(),
+      difficulty: parsePracticeDifficulty(difficulty ?? dto.difficulty),
     });
   }
 }

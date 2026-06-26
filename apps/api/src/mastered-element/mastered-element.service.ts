@@ -1,11 +1,15 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 
 import { masteredElements as masteredElementsSchema } from "@earthworm/schema";
+import { PracticeSourceType } from "../common/practice";
 import { DB, DbType } from "../global/providers/db.provider";
 
 export interface ElementContent {
+  sourceType: PracticeSourceType;
+  sourceId: string;
   english: string;
+  chinese?: string;
 }
 
 @Injectable()
@@ -14,8 +18,12 @@ export class MasteredElementService {
 
   async addMasteredElement(userId: string, content: ElementContent) {
     const normalizedContent = this.parseContent(content);
-    if (!normalizedContent?.english) {
-      throw new BadRequestException("Element english content is required");
+    if (
+      !normalizedContent?.sourceType ||
+      !normalizedContent?.sourceId ||
+      !normalizedContent?.english
+    ) {
+      throw new BadRequestException("Element source and english content are required");
     }
 
     if (await this.isMastered(userId, normalizedContent)) {
@@ -26,18 +34,14 @@ export class MasteredElementService {
       .insert(masteredElementsSchema)
       .values({
         userId,
-        content: normalizedContent,
+        sourceType: normalizedContent.sourceType,
+        sourceId: normalizedContent.sourceId,
+        english: normalizedContent.english,
+        chinese: normalizedContent.chinese ?? "",
         masteredAt: new Date(),
       })
       .returning();
 
-    await this.db.execute(sql`
-      UPDATE mastered_elements
-      SET content = jsonb_build_object('english', ${normalizedContent.english}::text)
-      WHERE id = ${entity.id}
-    `);
-
-    entity.content = normalizedContent;
     return entity;
   }
 
@@ -48,10 +52,7 @@ export class MasteredElementService {
       .where(eq(masteredElementsSchema.userId, userId))
       .orderBy(desc(masteredElementsSchema.masteredAt));
 
-    return result.map((item) => ({
-      ...item,
-      content: this.parseContent(item.content),
-    }));
+    return result;
   }
 
   async removeMasteredElement(userId: string, elementId: string) {
@@ -75,9 +76,15 @@ export class MasteredElementService {
     const result = await this.db
       .select()
       .from(masteredElementsSchema)
-      .where(eq(masteredElementsSchema.userId, userId));
+      .where(
+        and(
+          eq(masteredElementsSchema.userId, userId),
+          eq(masteredElementsSchema.sourceType, content.sourceType),
+          eq(masteredElementsSchema.sourceId, content.sourceId),
+        ),
+      );
 
-    return result.some((item) => this.parseContent(item.content)?.english === content.english);
+    return result.length > 0;
   }
 
   private parseContent(content: unknown): ElementContent | null {

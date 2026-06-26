@@ -2,6 +2,7 @@ import { Inject, Injectable, NotFoundException } from "@nestjs/common";
 import { and, asc, eq } from "drizzle-orm";
 
 import { course, coursePack } from "@earthworm/schema";
+import { DEFAULT_PRACTICE_DIFFICULTY, PracticeDifficulty } from "../common/practice";
 import { CourseHistoryService } from "../course-history/course-history.service";
 import { CourseService } from "../course/course.service";
 import { DB, DbType } from "../global/providers/db.provider";
@@ -13,6 +14,7 @@ export interface CompleteCourseStats {
   duration?: number;
   count?: number;
   completedAt?: Date;
+  difficulty?: PracticeDifficulty;
 }
 
 @Injectable()
@@ -32,8 +34,7 @@ export class CoursePackService {
 
   async findAllPublicCoursePacks() {
     return await this.db.query.coursePack.findMany({
-      orderBy: asc(coursePack.order),
-      where: eq(coursePack.shareLevel, "public"),
+      orderBy: asc(coursePack.title),
     });
   }
 
@@ -58,7 +59,7 @@ export class CoursePackService {
       where: and(eq(coursePack.id, coursePackId)),
       with: {
         courses: {
-          orderBy: asc(course.order),
+          orderBy: asc(course.displayOrder),
         },
       },
     });
@@ -67,31 +68,32 @@ export class CoursePackService {
       throw new NotFoundException(`CoursePack with ID ${coursePackId} not found`);
     }
 
-    if (coursePackWithCourses.shareLevel !== "public") {
-      throw new NotFoundException(`CoursePack with ID ${coursePackId} not found`);
-    }
-
     return coursePackWithCourses;
   }
 
-  async findCourse(coursePackId: string, courseId: string, userId?: string | null) {
-    const courseEntity = await this.courseService.find(coursePackId, courseId, userId);
+  async findCourse(
+    coursePackId: string,
+    courseId: string,
+    userId?: string | null,
+    difficulty: PracticeDifficulty = DEFAULT_PRACTICE_DIFFICULTY,
+  ) {
+    const courseEntity = await this.courseService.find(coursePackId, courseId, userId, difficulty);
     if (!userId) {
       return {
         ...courseEntity,
-        statementIndex: 0,
+        practiceIndex: 0,
         completionCount: 0,
       };
     }
 
-    const [statementIndex, completionCount] = await Promise.all([
-      this.userCourseProgressService.findStatement(userId, coursePackId, courseId),
-      this.courseHistoryService.findCompletionCount(userId, coursePackId, courseId),
+    const [practiceIndex, completionCount] = await Promise.all([
+      this.userCourseProgressService.findPracticeIndex(userId, coursePackId, courseId, difficulty),
+      this.courseHistoryService.findCompletionCount(userId, coursePackId, courseId, difficulty),
     ]);
 
     return {
       ...courseEntity,
-      statementIndex,
+      practiceIndex,
       completionCount,
     };
   }
@@ -106,11 +108,12 @@ export class CoursePackService {
     userId?: string | null,
     stats: CompleteCourseStats = {},
   ) {
+    const difficulty = stats.difficulty ?? DEFAULT_PRACTICE_DIFFICULTY;
     const result = await this.courseService.completeCourse(coursePackId, courseId);
 
     if (userId) {
       const completedAt = stats.completedAt ?? new Date();
-      await this.courseHistoryService.upsert(userId, coursePackId, courseId);
+      await this.courseHistoryService.upsert(userId, coursePackId, courseId, difficulty);
 
       if (stats.duration && stats.duration > 0) {
         await this.userLearningActivityService.upsertActivity(
@@ -119,7 +122,7 @@ export class CoursePackService {
           "course_learning_time",
           stats.duration,
           courseId,
-          { coursePackId },
+          { coursePackId, difficulty },
         );
       }
 

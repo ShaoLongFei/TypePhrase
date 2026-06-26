@@ -1,4 +1,4 @@
-import { IsDateString, IsInt, IsOptional, Min } from "class-validator";
+import { IsDateString, IsIn, IsInt, IsOptional, Min } from "class-validator";
 
 export class CompleteCourseDto {
   @IsOptional()
@@ -14,4 +14,8 @@ export class CompleteCourseDto {
   @IsOptional()
   @IsDateString()
   completedAt?: string;
+
+  @IsOptional()
+  @IsIn(["normal", "hard"])
+  difficulty?: "normal" | "hard";
 }

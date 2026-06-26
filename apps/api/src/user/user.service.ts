@@ -1,5 +1,5 @@
 import { HttpException, Inject, Injectable } from "@nestjs/common";
-import { eq } from "drizzle-orm";
+import { asc, eq } from "drizzle-orm";
 
 import { course, coursePack, users } from "@earthworm/schema";
 import { DB, DbType } from "../global/providers/db.provider";
@@ -57,15 +57,16 @@ export class UserService {
     await this.updateUser(user, { username: dto.username, avatar: dto.avatar });
 
     const { id, courses } = await this.db.query.coursePack.findFirst({
-      where: eq(coursePack.order, 1),
+      orderBy: [asc(coursePack.title)],
       with: {
         courses: {
-          where: eq(course.order, 1),
+          orderBy: [asc(course.displayOrder)],
+          limit: 1,
         },
       },
     });
 
-    await this.userCourseProgressService.upsert(user.userId, id, courses.at(0).id, 0);
+    await this.userCourseProgressService.upsert(user.userId, id, courses.at(0).id, "normal", 0);
     return {
       avatar: dto.avatar,
       username: dto.username,

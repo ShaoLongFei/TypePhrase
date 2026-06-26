@@ -1,23 +1,30 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { and, asc, desc, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 
 import { coursePack, userCourseProgress } from "@earthworm/schema";
+import { DEFAULT_PRACTICE_DIFFICULTY, PracticeDifficulty } from "../common/practice";
 import { DB, DbType } from "../global/providers/db.provider";
 
 @Injectable()
 export class UserCourseProgressService {
   constructor(@Inject(DB) private db: DbType) {}
 
-  async findStatement(userId: string, coursePackId: string, courseId: string) {
+  async findPracticeIndex(
+    userId: string,
+    coursePackId: string,
+    courseId: string,
+    difficulty: PracticeDifficulty = DEFAULT_PRACTICE_DIFFICULTY,
+  ) {
     const result = await this.db.query.userCourseProgress.findFirst({
       where: and(
         eq(userCourseProgress.userId, userId),
         eq(userCourseProgress.coursePackId, coursePackId),
         eq(userCourseProgress.courseId, courseId),
+        eq(userCourseProgress.difficulty, difficulty),
       ),
     });
 
-    return result ? result.statementIndex : 0;
+    return result ? result.practiceIndex : 0;
   }
 
   async getUserRecentCoursePacks(userId: string, limit: number) {
@@ -29,7 +36,7 @@ export class UserCourseProgressService {
         title: coursePack.title,
         description: coursePack.description,
         cover: coursePack.cover,
-        isFree: coursePack.isFree,
+        difficulty: userCourseProgress.difficulty,
       })
       .from(userCourseProgress)
       .where(eq(userCourseProgress.userId, userId))
@@ -40,18 +47,29 @@ export class UserCourseProgressService {
     return userCourseProgressResult;
   }
 
-  async upsert(userId: string, coursePackId: string, courseId: string, statementIndex: number) {
+  async upsert(
+    userId: string,
+    coursePackId: string,
+    courseId: string,
+    difficulty: PracticeDifficulty,
+    practiceIndex: number,
+  ) {
     await this.db
       .insert(userCourseProgress)
       .values({
         userId,
         coursePackId,
         courseId,
-        statementIndex,
+        difficulty,
+        practiceIndex,
       })
       .onConflictDoUpdate({
-        target: [userCourseProgress.userId, userCourseProgress.coursePackId],
-        set: { courseId, statementIndex },
+        target: [
+          userCourseProgress.userId,
+          userCourseProgress.coursePackId,
+          userCourseProgress.difficulty,
+        ],
+        set: { courseId, practiceIndex, updatedAt: new Date() },
       });
   }
 }
