@@ -5,7 +5,6 @@ import { getHttp } from "./http";
 export type CoursePacksItemApiResponse = {
   id: string;
   title: string;
-  isFree: boolean;
   description: string;
   cover: string;
 };
@@ -14,7 +13,6 @@ export interface CoursePackApiResponse {
   id: string;
   title: string;
   description: string;
-  isFree: boolean;
   cover: string;
   courses: CourseApiResponse[];
 }

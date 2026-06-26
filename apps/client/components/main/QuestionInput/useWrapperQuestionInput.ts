@@ -33,7 +33,7 @@ export function useWrapperQuestionInput() {
     isFixMode,
     isFixInputMode,
   } = useInput({
-    source: () => courseStore.currentStatement?.english!,
+    source: () => courseStore.currentPracticeItem?.english!,
     setInputCursorPosition,
     getInputCursorPosition,
     inputChangedCallback,
@@ -46,7 +46,7 @@ export function useWrapperQuestionInput() {
   }
 
   function handleAnswerRight() {
-    courseTimer.timeEnd(String(courseStore.statementIndex)); // 停止当前题目的计时
+    courseTimer.timeEnd(String(courseStore.practiceIndex)); // 停止当前题目的计时
     playRightSound();
 
     if (isAutoNextQuestion()) {
@@ -55,7 +55,7 @@ export function useWrapperQuestionInput() {
         blurInput(); // 失去输入焦点，防止结束时光标仍然在输入框，造成后续结算面板回车事件无法触发
         showSummary();
       }
-      courseStore.toNextStatement();
+      courseStore.toNextPracticeItem();
     } else {
       showAnswer();
     }

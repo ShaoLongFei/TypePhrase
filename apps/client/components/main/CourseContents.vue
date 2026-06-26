@@ -50,6 +50,7 @@
                 {{ item.chinese }}
               </div>
               <div
+                v-if="item.soundmark"
                 class="truncate text-lg text-gray-500 group-hover:text-clip group-hover:whitespace-normal dark:text-gray-400"
               >
                 {{ item.soundmark }}
@@ -88,7 +89,7 @@ const itemRefs = ref<(HTMLElement | null)[]>([]);
 const coursesStore = useCourseStore();
 const { showQuestion } = useGameMode();
 const contentsList = computed(() => {
-  return coursesStore.currentCourse?.statements || [];
+  return coursesStore.currentCourse?.practiceItems || [];
 });
 
 const filterOption = ref("all"); // 新增过滤选项
@@ -112,7 +113,7 @@ function jumpTo(index: number, item: any) {
   }
   showQuestion();
   hideCourseContents();
-  coursesStore.toSpecificStatement(index);
+  coursesStore.toSpecificPracticeItem(index);
 }
 
 function handlePlayEnglishSound(event: Event, english: string) {
@@ -125,7 +126,7 @@ watch(
   (newValue) => {
     if (newValue) {
       nextTick(() => {
-        const targetElement = itemRefs.value[coursesStore.statementIndex];
+        const targetElement = itemRefs.value[coursesStore.practiceIndex];
         if (targetElement) {
           targetElement.scrollIntoView({ behavior: "smooth", block: "start" });
         }

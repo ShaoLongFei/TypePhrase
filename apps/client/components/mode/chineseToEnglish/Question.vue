@@ -1,7 +1,7 @@
 <template>
   <div class="text-center">
     <div class="mb-4 mt-10 text-2xl dark:text-gray-50">
-      {{ courseStore.currentStatement?.chinese || "生存还是毁灭，这是一个问题" }}
+      {{ courseStore.currentPracticeItem?.chinese || "生存还是毁灭，这是一个问题" }}
     </div>
     <MainQuestionInput />
   </div>
@@ -10,12 +10,12 @@
 <script setup lang="ts">
 import { onMounted, watch } from "vue";
 
-import { useCurrentStatementEnglishSound } from "~/composables/main/englishSound";
+import { useCurrentPracticeItemEnglishSound } from "~/composables/main/englishSound";
 import { useAutoPlayEnglish } from "~/composables/user/sound";
 import { useCourseStore } from "~/store/course";
 
 const courseStore = useCourseStore();
-const { playSound } = useCurrentStatementEnglishSound();
+const { playSound } = useCurrentPracticeItemEnglishSound();
 const { isAutoPlayEnglish } = useAutoPlayEnglish();
 
 onMounted(() => {
@@ -23,7 +23,7 @@ onMounted(() => {
 });
 
 watch(
-  () => courseStore.currentStatement,
+  () => courseStore.currentPracticeItem,
   () => {
     handleAutoPlayEnglish();
   },

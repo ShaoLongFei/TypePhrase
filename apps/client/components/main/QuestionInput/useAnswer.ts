@@ -13,7 +13,7 @@ export function useAnswer() {
       return;
     }
 
-    courseStore.toNextStatement();
+    courseStore.toNextPracticeItem();
     showQuestion();
   }
 

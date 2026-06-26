@@ -1,9 +1,11 @@
+import type { PracticeDifficulty } from "./course";
 import { getHttp } from "./http";
 
 export interface UpsertUserCourseProgressPayload {
   coursePackId: string;
   courseId: string;
-  statementIndex: number;
+  difficulty: PracticeDifficulty;
+  practiceIndex: number;
 }
 
 export async function fetchUpsertUserCourseProgress(payload: UpsertUserCourseProgressPayload) {

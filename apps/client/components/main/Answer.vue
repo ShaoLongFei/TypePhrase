@@ -14,11 +14,14 @@
         @click="handlePlayEnglishSound"
       ></UIcon>
     </div>
-    <div class="my-6 text-xl text-gray-500">
-      {{ courseStore.currentStatement?.soundmark }}
+    <div
+      v-if="courseStore.currentPracticeItem?.soundmark"
+      class="my-6 text-xl text-gray-500"
+    >
+      {{ courseStore.currentPracticeItem?.soundmark }}
     </div>
     <div class="my-6 text-xl text-gray-500">
-      {{ courseStore.currentStatement?.chinese }}
+      {{ courseStore.currentPracticeItem?.chinese }}
     </div>
     <div class="space-y-3">
       <div>
@@ -49,7 +52,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from "vue";
 
-import { useCurrentStatementEnglishSound } from "~/composables/main/englishSound";
+import { useCurrentPracticeItemEnglishSound } from "~/composables/main/englishSound";
 import { usePlayWordSound } from "~/composables/main/englishSound/audio";
 import { useGameMode } from "~/composables/main/game";
 import { useAutoPronunciation } from "~/composables/user/sound";
@@ -65,12 +68,12 @@ const { isAutoPlaySound } = useAutoPronunciation();
 const { goToNextQuestion } = useAnswer();
 const isMarkingMastered = ref(false);
 
-const words = computed(() => courseStore.currentStatement?.english.split(" "));
+const words = computed(() => courseStore.currentPracticeItem?.english.split(" "));
 
 registerShortcutKeyForNextQuestion();
 
 function usePlayEnglishSound() {
-  const { playSound } = useCurrentStatementEnglishSound();
+  const { playSound } = useCurrentPracticeItemEnglishSound();
 
   onMounted(() => {
     if (isAutoPlaySound()) {
@@ -106,7 +109,7 @@ function registerShortcutKeyForNextQuestion() {
 async function handleMarkMastered() {
   isMarkingMastered.value = true;
   try {
-    await courseStore.markCurrentStatementMastered();
+    await courseStore.markCurrentPracticeItemMastered();
     showQuestion();
   } finally {
     isMarkingMastered.value = false;

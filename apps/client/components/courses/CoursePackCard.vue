@@ -32,7 +32,6 @@ interface Props {
     title: string;
     description: string;
     cover: string;
-    isFree: boolean;
   };
 }
 

@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useCourseStore } from "~/store/course";
 import { play, updateSource } from "../audio";
-import { useCurrentStatementEnglishSound } from "../index";
+import { useCurrentPracticeItemEnglishSound } from "../index";
 
 vi.mock("../audio.ts", () => {
   return {
@@ -12,7 +12,7 @@ vi.mock("../audio.ts", () => {
   };
 });
 
-describe("useCurrentStatementEnglishSound", () => {
+describe("useCurrentPracticeItemEnglishSound", () => {
   beforeEach(() => {
     vi.useFakeTimers();
     createTestingPinia({
@@ -20,12 +20,14 @@ describe("useCurrentStatementEnglishSound", () => {
     });
 
     const courseStore = useCourseStore();
-    courseStore.currentStatement = {
+    courseStore.currentPracticeItem = {
       id: "1",
+      sourceType: "statement",
       order: 1,
       english: "I",
       soundmark: "/I/",
       chinese: "我",
+      itemType: "word",
       isMastered: false,
     };
 
@@ -33,7 +35,7 @@ describe("useCurrentStatementEnglishSound", () => {
   });
 
   it("plays sound", async () => {
-    const { playSound } = useCurrentStatementEnglishSound();
+    const { playSound } = useCurrentPracticeItemEnglishSound();
 
     playSound();
 
@@ -41,16 +43,18 @@ describe("useCurrentStatementEnglishSound", () => {
   });
 
   it("should updates audio source", async () => {
-    useCurrentStatementEnglishSound();
+    useCurrentPracticeItemEnglishSound();
 
     // update english value
     const courseStore = useCourseStore();
-    courseStore.currentStatement = {
+    courseStore.currentPracticeItem = {
       id: "2",
+      sourceType: "statement",
       order: 2,
       english: "like",
       soundmark: "/like/",
       chinese: "喜欢",
+      itemType: "word",
       isMastered: false,
     };
     await vi.advanceTimersToNextTimerAsync();
@@ -59,15 +63,17 @@ describe("useCurrentStatementEnglishSound", () => {
   });
 
   it("does not update audio source if the word is the same", async () => {
-    useCurrentStatementEnglishSound();
+    useCurrentPracticeItemEnglishSound();
 
     const courseStore = useCourseStore();
-    courseStore.currentStatement = {
+    courseStore.currentPracticeItem = {
       id: "1",
+      sourceType: "statement",
       order: 1,
       english: "I",
       soundmark: "/I/",
       chinese: "我",
+      itemType: "word",
       isMastered: false,
     };
 

@@ -10,13 +10,13 @@ import { play, updateSource } from "./audio";
 const { getPronunciationUrl } = usePronunciation();
 
 let lastPronunciationUrl = "";
-export function useCurrentStatementEnglishSound() {
+export function useCurrentPracticeItemEnglishSound() {
   const courseStore = useCourseStore();
   const { toolBarData } = useToolbar();
   const { isDictationMode } = useGamePlayMode();
 
   watchEffect(() => {
-    const word = courseStore.currentStatement?.english;
+    const word = courseStore.currentPracticeItem?.english;
     const pronunciationUrl = getPronunciationUrl(word);
     if (lastPronunciationUrl !== pronunciationUrl) {
       updateSource(pronunciationUrl, word);

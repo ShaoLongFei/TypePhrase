@@ -12,7 +12,6 @@ const coursePacks = [
     title: "付费包",
     description: "也应该可以直接学习",
     cover: "",
-    isFree: false,
   },
 ];
 

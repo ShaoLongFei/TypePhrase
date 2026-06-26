@@ -1,6 +1,6 @@
-import type { CourseApiResponse, StatementApiResponse } from "~/api/course";
+import type { CourseApiResponse, PracticeItemApiResponse } from "~/api/course";
 
-export interface Statement extends StatementApiResponse {}
+export interface PracticeItem extends PracticeItemApiResponse {}
 export interface Course extends CourseApiResponse {
-  statements: Statement[];
+  practiceItems: PracticeItem[];
 }

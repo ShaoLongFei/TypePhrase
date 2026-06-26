@@ -6,7 +6,12 @@
     <div class="flex items-center">
       <NuxtLink
         class="clickable-item flex items-center justify-center"
-        :href="`/course-pack/${courseStore.currentCourse?.coursePackId}`"
+        :to="{
+          path: `/course-pack/${courseStore.currentCourse?.coursePackId}`,
+          query: courseStore.currentCourse?.difficulty
+            ? { difficulty: courseStore.currentCourse.difficulty }
+            : undefined,
+        }"
       >
         <UTooltip text="课程列表">
           <IconsExpand class="h-7 w-7" />
@@ -20,7 +25,6 @@
           {{ currentCourseInfo }}
         </UTooltip>
       </div>
-      <MainStudyVideoLink :video="courseStore.currentCourse?.video" />
     </div>
 
     <!-- 右侧 -->
@@ -95,20 +99,21 @@ const { openGameSettingModal } = useGameSetting();
 const modal = useModal();
 
 const currentCourseInfo = computed(() => {
-  return `${courseStore.currentCourse?.title}（${currentSchedule.value}/${courseStore.visibleStatementsCount}）`;
+  return `${courseStore.currentCourse?.title}（${currentSchedule.value}/${courseStore.visiblePracticeItemsCount}）`;
 });
 
 const currentSchedule = computed(() => {
-  return courseStore.visibleStatementIndex + 1;
+  return courseStore.visiblePracticeItemIndex + 1;
 });
 
 const currentPercentage = computed(() => {
   if (courseStore.isAllDone()) {
     return 100;
   }
-  return ((courseStore.visibleStatementIndex / courseStore.visibleStatementsCount) * 100).toFixed(
-    2,
-  );
+  return (
+    (courseStore.visiblePracticeItemIndex / courseStore.visiblePracticeItemsCount) *
+    100
+  ).toFixed(2);
 });
 
 const isOpenCourseContents = ref(false);

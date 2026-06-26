@@ -17,7 +17,6 @@
                   title: coursePack.title,
                   description: coursePack.description,
                   cover: coursePack.cover,
-                  isFree: coursePack.isFree,
                 }"
                 @cardClick="handleGoToCoursePack"
               ></CoursePackCard>

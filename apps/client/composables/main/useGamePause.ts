@@ -48,7 +48,7 @@ export function useGamePause() {
 
     // 用户切换题目的时候重置计时器
     watch(
-      () => courseStore.statementIndex,
+      () => courseStore.practiceIndex,
       () => {
         debouncedResetInactivityTimer();
       },

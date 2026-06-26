@@ -2,7 +2,7 @@
   <div class="absolute flex w-full items-center justify-between">
     <div class="h-12 w-12">
       <button
-        v-show="courseStore.visibleStatementIndex !== 0"
+        v-show="courseStore.visiblePracticeItemIndex !== 0"
         class="arrow-btn"
         @click="goToPreviousQuestion"
       >
@@ -20,7 +20,7 @@
 
     <div class="h-12 w-12">
       <button
-        v-show="courseStore.visibleStatementIndex + 1 !== courseStore.visibleStatementsCount"
+        v-show="courseStore.visiblePracticeItemIndex + 1 !== courseStore.visiblePracticeItemsCount"
         class="arrow-btn"
         @click="goToNextQuestion"
       >
@@ -62,12 +62,12 @@ function usePrevAndNextQuestion(prevKey: string, nextKey: string) {
   handleShortcut();
 
   function goToNextQuestion() {
-    courseStore.toNextStatement();
+    courseStore.toNextPracticeItem();
     showQuestion();
   }
 
   function goToPreviousQuestion() {
-    courseStore.toPreviousStatement();
+    courseStore.toPreviousPracticeItem();
     showQuestion();
   }
 

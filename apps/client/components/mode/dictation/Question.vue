@@ -7,11 +7,11 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, watch } from "vue";
 
-import { useCurrentStatementEnglishSound } from "~/composables/main/englishSound";
+import { useCurrentPracticeItemEnglishSound } from "~/composables/main/englishSound";
 import { useCourseStore } from "~/store/course";
 
 usePlayEnglishSound();
-const { playSound } = useCurrentStatementEnglishSound();
+const { playSound } = useCurrentPracticeItemEnglishSound();
 
 function usePlayEnglishSound() {
   onMounted(() => {
@@ -19,7 +19,7 @@ function usePlayEnglishSound() {
     const courseStore = useCourseStore();
 
     watch(
-      () => courseStore.statementIndex,
+      () => courseStore.practiceIndex,
       () => {
         pauseSound();
         playSound();

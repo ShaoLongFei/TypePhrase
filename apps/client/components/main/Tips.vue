@@ -23,7 +23,7 @@
 import { computed, onMounted, onUnmounted } from "vue";
 
 import { useAnswerTip } from "~/composables/main/answerTip";
-import { useCurrentStatementEnglishSound } from "~/composables/main/englishSound";
+import { useCurrentPracticeItemEnglishSound } from "~/composables/main/englishSound";
 import { useGameMode } from "~/composables/main/game";
 import { useSummary } from "~/composables/main/summary";
 import { useShortcutKeyMode } from "~/composables/user/shortcutKey";
@@ -94,7 +94,7 @@ const keybindings = computed(() => {
 });
 
 function usePlaySound(key: string) {
-  const { playSound } = useCurrentStatementEnglishSound();
+  const { playSound } = useCurrentPracticeItemEnglishSound();
 
   onMounted(() => {
     registerShortcut(key, playSoundCommand);

@@ -187,14 +187,18 @@ function useCourse() {
     }
 
     if (courseStore.currentCourse) {
-      gotoGame(courseStore.currentCourse.coursePackId, nextCourseId.value);
+      gotoGame(
+        courseStore.currentCourse.coursePackId,
+        nextCourseId.value,
+        courseStore.currentCourse.difficulty,
+      );
     }
   }
 
   function handleGoToCourseList() {
     hideSummary();
     if (courseStore.currentCourse) {
-      gotoCourseList(courseStore.currentCourse.coursePackId);
+      gotoCourseList(courseStore.currentCourse.coursePackId, courseStore.currentCourse.difficulty);
     }
   }
 

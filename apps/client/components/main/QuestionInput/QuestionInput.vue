@@ -67,7 +67,7 @@ import { toast } from "vue-sonner";
 
 import { courseTimer } from "~/composables/courses/courseTimer";
 import { useAnswerTip } from "~/composables/main/answerTip";
-import { useCurrentStatementEnglishSound } from "~/composables/main/englishSound";
+import { useCurrentPracticeItemEnglishSound } from "~/composables/main/englishSound";
 import { isWord } from "~/composables/main/question";
 import { useShowWordsWidth } from "~/composables/user/words";
 import { useCourseStore } from "~/store/course";
@@ -102,12 +102,12 @@ watch(
   () => inputValue.value,
   (val) => {
     setInputValue(val);
-    courseTimer.time(String(courseStore.statementIndex));
+    courseTimer.time(String(courseStore.practiceIndex));
   },
 );
 
 watch(
-  () => courseStore.statementIndex,
+  () => courseStore.practiceIndex,
   () => {
     focusInput();
     resetCloseTip();
@@ -128,7 +128,7 @@ function focusInputWhenWIndowFocus() {
   });
 }
 
-const { playSound } = useCurrentStatementEnglishSound();
+const { playSound } = useCurrentPracticeItemEnglishSound();
 function handlePlaySound(e: MouseEvent) {
   e.preventDefault();
   playSound();

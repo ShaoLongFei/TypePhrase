@@ -1,55 +1,56 @@
 import { defineStore } from "pinia";
 import { computed, ref, watchEffect } from "vue";
 
-import type { Course, Statement } from "~/types";
-import { fetchCompleteCourse, fetchCourse } from "~/api/course";
+import type { PracticeDifficulty } from "~/api/course";
+import type { Course, PracticeItem } from "~/types";
+import { DEFAULT_PRACTICE_DIFFICULTY, fetchCompleteCourse, fetchCourse } from "~/api/course";
 import { fetchAddMasteredElement } from "~/api/mastered-elements";
 import { fetchUpsertUserCourseProgress } from "~/api/user-course-progress";
 import { useActiveCourseMap } from "~/composables/courses/activeCourse";
-import { useStatement } from "./statement";
+import { usePractice } from "./practice";
 
 export const useCourseStore = defineStore("course", () => {
   const currentCourse = ref<Course>();
-  const currentStatement = ref<Statement>();
-  const { statementIndex } = useStatement();
+  const currentPracticeItem = ref<PracticeItem>();
+  const { practiceIndex } = usePractice();
 
   const { updateActiveCourseMap } = useActiveCourseMap();
 
   watchEffect(() => {
-    currentStatement.value = currentCourse.value?.statements[statementIndex.value];
+    currentPracticeItem.value = currentCourse.value?.practiceItems[practiceIndex.value];
   });
 
   const words = computed(() => {
-    return currentStatement.value?.english.split(" ") || [];
+    return currentPracticeItem.value?.english.split(" ") || [];
   });
 
-  const visibleStatementsCount = computed(
-    () => currentCourse.value?.statements.filter((s) => !s.isMastered).length || 0,
+  const visiblePracticeItemsCount = computed(
+    () => currentCourse.value?.practiceItems.filter((item) => !item.isMastered).length || 0,
   );
 
-  const visibleStatementIndex = computed(() => {
+  const visiblePracticeItemIndex = computed(() => {
     let masteredCount = 0;
-    currentCourse.value?.statements.forEach((statement, index) => {
-      if (index < statementIndex.value) {
-        if (statement.isMastered) {
+    currentCourse.value?.practiceItems.forEach((practiceItem, index) => {
+      if (index < practiceIndex.value) {
+        if (practiceItem.isMastered) {
           masteredCount++;
         }
       }
     });
 
-    if (statementIndex.value - masteredCount >= visibleStatementsCount.value) {
-      return statementIndex.value - masteredCount - 1;
+    if (practiceIndex.value - masteredCount >= visiblePracticeItemsCount.value) {
+      return practiceIndex.value - masteredCount - 1;
     }
 
-    return statementIndex.value - masteredCount;
+    return practiceIndex.value - masteredCount;
   });
 
   const totalQuestionsCount = computed(() => {
-    return currentCourse.value?.statements.length || 0;
+    return currentCourse.value?.practiceItems.length || 0;
   });
 
-  function toSpecificStatement(index: number) {
-    statementIndex.value = index;
+  function toSpecificPracticeItem(index: number) {
+    practiceIndex.value = index;
     saveProgress();
   }
 
@@ -60,98 +61,112 @@ export const useCourseStore = defineStore("course", () => {
       if (
         index >= 0 &&
         index < totalQuestionsCount.value &&
-        !currentCourse.value!.statements[index].isMastered
+        !currentCourse.value!.practiceItems[index].isMastered
       ) {
         return index;
       }
     }
-    return -1; // 没有找到未掌握的元素
+    return -1;
   }
 
-  function toPreviousStatement() {
-    const prevIndex = findNextUnmasteredIndex(statementIndex.value, -1);
+  function toPreviousPracticeItem() {
+    const prevIndex = findNextUnmasteredIndex(practiceIndex.value, -1);
     if (prevIndex !== -1) {
-      statementIndex.value = prevIndex;
+      practiceIndex.value = prevIndex;
       saveProgress();
     }
   }
 
-  function toNextStatement() {
-    const nextIndex = findNextUnmasteredIndex(statementIndex.value, 1);
+  function toNextPracticeItem() {
+    const nextIndex = findNextUnmasteredIndex(practiceIndex.value, 1);
     if (nextIndex !== -1) {
-      statementIndex.value = nextIndex;
+      practiceIndex.value = nextIndex;
       saveProgress();
     }
   }
 
-  function resetStatementIndex() {
+  function resetPracticeIndex() {
     const firstIndex = findFirstUnmasteredIndex();
     if (firstIndex !== -1) {
-      statementIndex.value = firstIndex;
+      practiceIndex.value = firstIndex;
     }
   }
 
   function isAllDone() {
-    return visibleStatementIndex.value >= visibleStatementsCount.value - 1;
+    return visiblePracticeItemIndex.value >= visiblePracticeItemsCount.value - 1;
   }
 
-  function isLastStatement() {
-    return visibleStatementIndex.value + 1 === visibleStatementsCount.value;
+  function isLastPracticeItem() {
+    return visiblePracticeItemIndex.value + 1 === visiblePracticeItemsCount.value;
   }
 
   function isAllMastered() {
-    return visibleStatementsCount.value === 0;
+    return visiblePracticeItemsCount.value === 0;
   }
 
   function findFirstUnmasteredIndex() {
     if (!currentCourse.value) return 0;
-    return currentCourse.value.statements.findIndex((statement) => !statement.isMastered);
+    return currentCourse.value.practiceItems.findIndex((practiceItem) => !practiceItem.isMastered);
   }
 
   function doAgain() {
-    resetStatementIndex();
+    resetPracticeIndex();
     updateActiveCourseMap(currentCourse.value?.coursePackId!, currentCourse.value?.id!);
     saveProgress();
   }
 
   async function completeCourse(stats: { duration?: number; count?: number } = {}) {
     const coursePackId = currentCourse.value?.coursePackId!;
+    const difficulty = currentCourse.value?.difficulty ?? DEFAULT_PRACTICE_DIFFICULTY;
     const res = await fetchCompleteCourse(coursePackId, currentCourse.value?.id!, {
       ...stats,
+      difficulty,
       completedAt: new Date().toISOString(),
     });
     return res;
   }
 
-  async function markCurrentStatementMastered() {
-    if (!currentCourse.value || !currentStatement.value) return;
+  async function markCurrentPracticeItemMastered() {
+    if (!currentCourse.value || !currentPracticeItem.value) return;
 
-    const currentIndex = statementIndex.value;
-    await fetchAddMasteredElement({ english: currentStatement.value.english });
-    currentCourse.value.statements[currentIndex].isMastered = true;
+    const currentIndex = practiceIndex.value;
+    await fetchAddMasteredElement({
+      sourceType: currentPracticeItem.value.sourceType,
+      sourceId: currentPracticeItem.value.id,
+      english: currentPracticeItem.value.english,
+      chinese: currentPracticeItem.value.chinese,
+    });
+    currentCourse.value.practiceItems[currentIndex].isMastered = true;
 
     const nextIndex = findNextUnmasteredIndex(currentIndex, 1);
     if (nextIndex !== -1) {
-      statementIndex.value = nextIndex;
+      practiceIndex.value = nextIndex;
       saveProgress();
       return;
     }
 
     const previousIndex = findNextUnmasteredIndex(currentIndex, -1);
     if (previousIndex !== -1) {
-      statementIndex.value = previousIndex;
+      practiceIndex.value = previousIndex;
       saveProgress();
     }
   }
 
-  async function setup(coursePackId: string, courseId: string) {
-    let course = await fetchCourse(coursePackId, courseId);
+  async function setup(
+    coursePackId: string,
+    courseId: string,
+    difficulty: PracticeDifficulty = DEFAULT_PRACTICE_DIFFICULTY,
+  ) {
+    const course = await fetchCourse(coursePackId, courseId, difficulty);
 
-    currentCourse.value = course;
-    if (course.statementIndex > 0 && course.statementIndex < course.statements.length) {
-      statementIndex.value = course.statementIndex;
+    currentCourse.value = {
+      ...course,
+      difficulty: course.difficulty ?? difficulty,
+    };
+    if (course.practiceIndex > 0 && course.practiceIndex < course.practiceItems.length) {
+      practiceIndex.value = course.practiceIndex;
     } else {
-      resetStatementIndex();
+      resetPracticeIndex();
     }
   }
 
@@ -161,28 +176,29 @@ export const useCourseStore = defineStore("course", () => {
     void fetchUpsertUserCourseProgress({
       coursePackId: currentCourse.value.coursePackId,
       courseId: currentCourse.value.id,
-      statementIndex: statementIndex.value,
+      difficulty: currentCourse.value.difficulty,
+      practiceIndex: practiceIndex.value,
     }).catch(() => undefined);
   }
 
   return {
-    statementIndex,
+    practiceIndex,
     currentCourse,
-    currentStatement,
+    currentPracticeItem,
     words,
     totalQuestionsCount,
-    visibleStatementIndex,
-    visibleStatementsCount,
+    visiblePracticeItemIndex,
+    visiblePracticeItemsCount,
     setup,
     doAgain,
     isAllDone,
     completeCourse,
-    markCurrentStatementMastered,
-    toSpecificStatement,
-    toPreviousStatement,
-    toNextStatement,
-    resetStatementIndex,
-    isLastStatement,
+    markCurrentPracticeItemMastered,
+    toSpecificPracticeItem,
+    toPreviousPracticeItem,
+    toNextPracticeItem,
+    resetPracticeIndex,
+    isLastPracticeItem,
     isAllMastered,
   };
 });
