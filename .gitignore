@@ -138,3 +138,8 @@ dist
 .volumes
 cache
 course-db
+
+# local database snapshots
+*.sqlite
+*.sqllite
+*.db
